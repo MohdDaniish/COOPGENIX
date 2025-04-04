@@ -15,16 +15,17 @@ const UserIncomeSchema = new Schema({
     type: Number,
     required: true
   },
-  matrixId: {
+  packageId: {
     type: Number,
     required: true
   },
-  slotId: {
+  poolId: {
     type: Number,
     required: true
   },
-  level: {
+  reinvestCount: {
     type: Number,
+    default : 0
   },
   createdAt: {
     type: Date,
@@ -40,7 +41,7 @@ const UserIncomeSchema = new Schema({
 });
 
 UserIncomeSchema.index(
-  { sender: 1, receiver: 1, amount: 1, matrixId: 1, slotId :1, level : 1, txHash: 1 },
+  { sender: 1, receiver: 1, amount: 1, packageId: 1, poolId :1, reinvestCount : 1, txHash: 1 },
   { unique: true }
 );
 

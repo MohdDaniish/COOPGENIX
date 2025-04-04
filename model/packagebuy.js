@@ -1,18 +1,22 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const reEntrySchema = new Schema({
+const packagebuySchema = new Schema({
     user: {
         type: String,
         required: true
     },
     packageId: {
         type: Number,
-        default:0
-    },
-    reinvest: {
-        type: Number,
         required: true
+    },
+    usdAmt: {
+        type: Number,
+        default : 0
+    },
+    polAmt: {
+        type: Number,
+        default : 0
     },
     createdAt: {
         type: Date,
@@ -22,16 +26,16 @@ const reEntrySchema = new Schema({
         type: Date,
         default: Date.now
     },
-    txHash: { type: String, required: true, },
+    txHash: { type: String, required: true,},
     block: { type: Number, required: true },
     timestamp: { type: Number, required: true },
 });
 
-reEntrySchema.index(
-    { user: 1, packageId: 1, reinvest : 1, level :1, txHash: 1 },
+packagebuySchema.index(
+    { user: 1, packageId : 1,usdAmt :1, polAmt : 1, txHash: 1 },
     { unique: true }
   );
 
-const reEntry = mongoose.model('reentri', reEntrySchema);
+const packagebuy = mongoose.model('packagebuy', packagebuySchema);
 
-module.exports = reEntry;
+module.exports = packagebuy;

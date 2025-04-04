@@ -2,15 +2,11 @@ const express = require("express");
 const router = express.Router();
 const registration = require("../model/registration");
 const stake2 = require("../model/stake");
-const dailyroi = require("../model/dailyroi");
 const WithdrawalModel = require("../model/withdraw");
-const levelStake = require("../model/levelStake");
-const apprveWithdraw = require("../model/apprveWithdraw");
 const moment = require("moment-timezone");
 const { verifyToken } = require("../Middleware/jwtToken");
 
 const Web3 = require("web3");
-const notification = require("../model/notification");
 require('dotenv').config();
 
 const web3 = new Web3(

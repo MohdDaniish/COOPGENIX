@@ -1,16 +1,20 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const SlotPurchasedSchema = new Schema({
-    user: {
+const globalincomeSchema = new Schema({
+    sender: {
         type: String,
         required: true
     },
-    slotId: {
+    receiver: {
         type: Number,
         required: true
     },
-    checked: {
+    amount: {
+        type: Number,
+        default : 0
+    },
+    level: {
         type: Number,
         default : 0
     },
@@ -27,11 +31,11 @@ const SlotPurchasedSchema = new Schema({
     timestamp: { type: Number, required: true },
 });
 
-SlotPurchasedSchema.index(
-    { user: 1, slotId : 1, txHash: 1 },
+globalincomeSchema.index(
+    { sender: 1, receiver : 1,amount :1, level : 1, txHash: 1 },
     { unique: true }
   );
 
-const SlotPurchased = mongoose.model('SlotPurchased', SlotPurchasedSchema);
+const globalincome = mongoose.model('globalincome', globalincomeSchema);
 
-module.exports = SlotPurchased;
+module.exports = globalincome;

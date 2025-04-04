@@ -5,14 +5,12 @@ const express = require("express");
 const cors = require("cors");
 const config2 = require("./model/confiig");
 const stake = require("./model/stake");
-const levelStake = require("./model/levelStake");
 const app = express();
 const routes = require("./router");
 const cron = require("node-cron");
 const moment = require("moment-timezone");
 const stake2 = require("./model/stake");
 const registration = require("./model/registration");
-const dailyroi = require("./model/dailyroi");
 const withdraw = require("./model/withdraw");
 const Adminlogin = require("./routers/adminlogin");
 const AuthRouter = require("./routers/auth");
@@ -22,11 +20,12 @@ const path = require("path");
 const newuserplace = require("./model/newuserplace");
 const UserIncome = require("./model/userIncome");
 const reEntry = require("./model/reEntry");
-const SlotPurchased = require("./model/slotPurchased");
+const SlotPurchased = require("./model/packagebuy");
 const WithdrawUNW6 = require("./model/withdrawUNW6");
-const newuserplace2 = require("./model/newuserplace2");
-const newuserplace3 = require("./model/newuserplace3");
 const SponsorIncome = require("./model/sponsorincome");
+const upgrade = require("./model/upgrade");
+const globalincome = require("./model/globalincome");
+const claimpromise = require("./model/claimpromisereward");
 
 app.use(express.json());
 
@@ -113,7 +112,7 @@ async function processEvents(events) {
           let userId = "";
           const randomNumber = Math.floor(Math.random() * 100000);
           const fiveDigitNumber = randomNumber.toString().padStart(5, "0");
-          userId = "TEOCN" + fiveDigitNumber;
+          userId = "COOPG" + fiveDigitNumber;
           try {
             let isCreated = await registration.create({
               userId: userId,
@@ -122,19 +121,13 @@ async function processEvents(events) {
               referrerId: referrer.userId ? referrer.userId : 0,
               rId: returnValues.referrerId,
               referrer: returnValues.referrer,
-              // regby: returnValues.regby,
               txHash: transactionHash,
               block: blockNumber,
               timestamp: timestamp,
             });
-            // let isUpdated = await registration.updateOne(
-            //   { uId: returnValues.referrerId },
-            //   { $inc: { directCount: 1 } }
-            // );
 
             const getref =  await registration.findOne({ user : returnValues.user },{ referrer : 1 })
             if(getref){
-            await registration.updateOne({ user : getref.referrer, ranknumber : { $lt : 1 } }, { $set : { ranknumber : 1, rank : "Sapphire" } })
             await registration.updateOne({ user : getref.referrer }, { $inc : { directCount : 1 } })
             }
           } catch (e) {
@@ -147,15 +140,12 @@ async function processEvents(events) {
     } else if (event == "NewUserPlace") {
       try {
 
-        const rentricount = await reEntry.countDocuments({ referrer : returnValues.referrer, martixId : returnValues.matrixId, slotId : returnValues.slotId })
-
         await newuserplace.create({
           user: returnValues.user,
           referrer: returnValues.referrer,
           place: returnValues.place,
-          matrix: returnValues.matrixId,
-          level: returnValues.level,
-          slotId: returnValues.slotId,
+          packageId: returnValues.packageId,
+          poolId: returnValues.poolId,
           cycle: returnValues.cycle,
           txHash: transactionHash,
           block: blockNumber,
@@ -163,37 +153,6 @@ async function processEvents(events) {
           reentry : rentricount
         });
 
-        if(returnValues.matrixId == 5){
-          await newuserplace2.create({
-            user: returnValues.user,
-            referrer: returnValues.referrer,
-            place: returnValues.place,
-            matrix: returnValues.matrixId,
-            level: returnValues.level,
-            slotId: returnValues.slotId,
-            cycle: returnValues.cycle,
-            txHash: transactionHash,
-            block: blockNumber,
-            timestamp: timestamp,
-            reentry : rentricount
-          });
-        }
-
-        if(returnValues.matrixId == 6){
-          await newuserplace3.create({
-            user: returnValues.user,
-            referrer: returnValues.referrer,
-            place: returnValues.place,
-            matrix: returnValues.matrixId,
-            level: returnValues.level,
-            slotId: returnValues.slotId,
-            cycle: returnValues.cycle,
-            txHash: transactionHash,
-            block: blockNumber,
-            timestamp: timestamp,
-            reentry : rentricount
-          });
-        }
       } catch (e) {
         console.log("Error (NewUserPlace Event) :", e.message);
       }
@@ -203,9 +162,9 @@ async function processEvents(events) {
           sender: returnValues.sender,
           receiver: returnValues.receiver,
           amount: returnValues.amount,
-          matrixId: returnValues.matrixId,
-          slotId: returnValues.slotId,
-          level: returnValues.level,
+          packageId: returnValues.packageId,
+          poolId: returnValues.poolId,
+          reinvestCount : returnValues.reinvestCount,
           txHash: transactionHash,
           block: blockNumber,
           timestamp: timestamp,
@@ -213,147 +172,23 @@ async function processEvents(events) {
       } catch (e) {
         console.log("Error (UserIncome Event) :", e.message);
       }
-    } else if (event == "ReEntry") {
+    } else if (event == "Upgrade") {
       try {
         
-        await reEntry.create({
+         const isth = await upgrade.create({
           user: returnValues.user,
-          martixId: returnValues.matrixId,
-          slotId: returnValues.slotId,
-          level: returnValues.level,
+          referrer: returnValues.referrer,
+          poolId: returnValues._poolId,
+          packageId : returnValues._packageId,
+          cycle : returnValues.cycle,
           txHash: transactionHash,
           block: blockNumber,
           timestamp: timestamp,
         });
       } catch (e) {
-        console.log("Error (ReEntry Event) :", e.message);
+        console.log("Error (Upgrade Event) :", e.message);
       }
-    } else if (event == "SlotPurchased") {
-      try {
-        await SlotPurchased.create({
-          user: returnValues.user, 
-          slotId: returnValues.slotId,
-          txHash: transactionHash,
-          block: blockNumber,
-          timestamp: timestamp,
-        });
-        
-        let slot_rank = "";
-        let slot_ranknumber = 0;
-        if(returnValues.slotId == 1){
-          slot_rank = "Community Member";
-          slot_ranknumber = 1;
-        } else if(returnValues.slotId == 2){
-          slot_rank = "Beginner";
-          slot_ranknumber = 2;
-        } else if(returnValues.slotId == 3){
-          slot_rank = "Seeker";
-          slot_ranknumber = 3;
-        } else if(returnValues.slotId == 4){
-          slot_rank = "Engager";
-          slot_ranknumber = 4;
-        } else if(returnValues.slotId == 5){
-          slot_rank = "Motivator";
-          slot_ranknumber = 5;
-        } else if(returnValues.slotId == 6){
-          slot_rank = "Explorer";
-          slot_ranknumber = 6;
-        } else if(returnValues.slotId == 7){
-          slot_rank = "Soldier";
-          slot_ranknumber = 7;
-        } else if(returnValues.slotId == 8){
-          slot_rank = "Promoter";
-          slot_ranknumber = 8;
-        } else if(returnValues.slotId == 9){
-          slot_rank = "Advisor";
-          slot_ranknumber = 9;
-        } else if(returnValues.slotId == 10){
-          slot_rank = "Director";
-          slot_ranknumber = 10;
-        } else if(returnValues.slotId == 11){
-          slot_rank = "Achiever";
-          slot_ranknumber = 11;
-        } else if(returnValues.slotId == 12){
-          slot_rank = "Creator";
-          slot_ranknumber = 12;
-        } else if(returnValues.slotId == 13){
-          slot_rank = "Mentor";
-          slot_ranknumber = 13;
-        } else if(returnValues.slotId == 14){
-          slot_rank = "Expert";
-          slot_ranknumber = 14;
-        } else if(returnValues.slotId == 15){
-          slot_rank = "Master";
-          slot_ranknumber = 15;
-        } else if(returnValues.slotId == 16){
-          slot_rank = "Community Legend";
-          slot_ranknumber = 16;
-        }
-
-        if(slot_rank){
-          await registration.updateOne({ user : returnValues.user },{ $set : { slot_rank : slot_rank, slot_ranknumber : slot_ranknumber } })
-        }
-
-        if(returnValues.slotId >= 8){
-          
-          
-          const getref =  await registration.findOne({ user : returnValues.user },{ referrer : 1 })
-          //await registration.updateOne({ user : getref.referrer, ranknumber : { $lt : 1 } }, { $set : { ranknumber : 1, rank : "Sapphire" } })
-          
-          
-          const allrefdir = await registration.find({ referrer : getref.referrer })
-          let dir_prom_count = 0;
-          for ( const alid of allrefdir ){
-          const prom_us = await SlotPurchased.findOne({ user : alid.user, slotId : 8 })
-          if(prom_us){
-            dir_prom_count++;
-          }
-          }
-
-          if(dir_prom_count >= 2){
-            await registration.updateOne({ user : getref.referrer, ranknumber : { $lt : 2 } }, { $set : { ranknumber : 2, rank : "Ruby" } })
-          }
-          
-          if(dir_prom_count >= 4){
-            await registration.updateOne({ user : getref.referrer, ranknumber : { $lt : 3 } }, { $set : { ranknumber : 3, rank : "Topaz" } })
-          }
-
-          if(dir_prom_count >= 6){
-            await registration.updateOne({ user : getref.referrer, ranknumber : { $lt : 4 } }, { $set : { ranknumber : 4, rank : "Diamond" } })
-          }
-
-          if(dir_prom_count >= 8){
-            await registration.updateOne({ user : getref.referrer, ranknumber : { $lt : 5 } }, { $set : { ranknumber : 5, rank : "Green Diamond" } })
-          }
-
-          if(dir_prom_count >= 10){
-            await registration.updateOne({ user : getref.referrer, ranknumber : { $lt : 6 } }, { $set : { ranknumber : 6, rank : "Blue Diamond" } })
-          }
-
-          if(dir_prom_count >= 12){
-            await registration.updateOne({ user : getref.referrer, ranknumber : { $lt : 7 } }, { $set : { ranknumber : 7, rank : "Black Diamond" } })
-          }
-
-          if(dir_prom_count >= 15){
-            await registration.updateOne({ user : getref.referrer, ranknumber : { $lt : 8 } }, { $set : { ranknumber : 8, rank : "Crown Diamond" } })
-          }
-        }
-      } catch (e) {
-        console.log("Error (SlotPurchased Event) :", e.message);
-      }
-    } else if (event == "WithdrawUNW6") {
-      try {
-        await WithdrawUNW6.create({
-          user: returnValues.user,
-          amount: returnValues.amount,
-          txHash: transactionHash,
-          block: blockNumber,
-          timestamp: timestamp,
-        });
-      } catch (e) {
-        console.log("Error (WithdrawUNW6 Event) :", e.message);
-      }
-    } else if (event == "SponserReward") {
+    } else if (event == "SponserIncome") {
       try {
         await SponsorIncome.create({
           sender: returnValues.sender,
@@ -365,6 +200,94 @@ async function processEvents(events) {
         });
       } catch (e) {
         console.log("Error (SponserReward Event) :", e.message);
+      }
+    } else if (event == "ReEntry") {
+      try {
+        
+        await reEntry.create({
+          user: returnValues.user,
+          packageId: returnValues.packageId,
+          reinvest: returnValues.reinvest,
+          txHash: transactionHash,
+          block: blockNumber,
+          timestamp: timestamp,
+        });
+      } catch (e) {
+        console.log("Error (ReEntry Event) :", e.message);
+      }
+    } else if (event == "Withdraw") {
+      try {
+        
+          const iswit = await withdraw.create({  
+          user: returnValues.user,
+          amount: returnValues.amount,
+          netUsdAmt : returnValues.netUsdAmt,
+          netPolAmt : returnValues.netPolAmt,
+          txHash: transactionHash,
+          block: blockNumber,
+          timestamp: timestamp,
+        });
+
+      } catch (e) {
+        console.log("Error (Withdraw Event) :", e.message);
+      }
+    } else if (event == "PackageBuy") {
+      try {
+        
+          const iswit = await withdraw.create({  
+          user: returnValues.user,
+          amount: returnValues.amount,
+          netUsdAmt : returnValues.netUsdAmt,
+          netPolAmt : returnValues.netPolAmt,
+          txHash: transactionHash,
+          block: blockNumber,
+          timestamp: timestamp,
+        });
+
+      } catch (e) {
+        console.log("Error (Withdraw Event) :", e.message);
+      }
+    } else if (event == "GlobalIncome") {
+      try {
+        
+          const iswit = await globalincome.create({  
+          sender: returnValues.sender,
+          receiver: returnValues.receiver,
+          amount : returnValues.amount,
+          level : returnValues.level,
+          txHash: transactionHash,
+          block: blockNumber,
+          timestamp: timestamp,
+        });
+
+      } catch (e) {
+        console.log("Error (GlobalIncome Event) :", e.message);
+      }
+    } else if (event == "ClaimedPromiseReward") {
+      try {
+        
+          const iswit = await claimpromise.create({  
+          user: returnValues.user,
+          amount : returnValues.amount,
+          txHash: transactionHash,
+          block: blockNumber,
+          timestamp: timestamp,
+        });
+
+      } catch (e) {
+        console.log("Error (ClaimedPromiseReward Event) :", e.message);
+      }
+    } else if (event == "StopedPromiseReward") {
+      try {
+        
+          const iswit = await claimpromise.create({  
+          user: returnValues.user,
+          block: blockNumber,
+          timestamp: timestamp,
+        });
+
+      } catch (e) {
+        console.log("Error (StopedPromiseReward Event) :", e.message);
       }
     }
   }
@@ -602,161 +525,6 @@ const updateTeambussness = async () => {
   }
 };
 
-async function findUplines(txHash, uplines = []) {
-  try {
-    const stakeRecord = await stake2.findOne({ txHash }).exec();
-    const referrerRecord = await registration
-      .findOne({ user: stakeRecord.user }, { referrer: 1 })
-      .exec();
-    let currentReferrerId = referrerRecord.referrer;
-    let i = 1;
-
-    while (currentReferrerId && i < 16) {
-      const record = await registration
-        .findOne(
-          { user: currentReferrerId },
-          { directStakeCount: 1, referrer: 1 }
-        )
-        .exec();
-
-      if (!record) {
-        break;
-      }
-
-      const directStakeCount = record.directStakeCount || 0;
-      let iselig = 0;
-
-      switch (true) {
-        case directStakeCount >= 1 && i < 4:
-        case directStakeCount >= 3 && i < 7:
-        case directStakeCount >= 5 && i < 11:
-        case directStakeCount >= 7 && i < 16:
-          iselig = 1;
-          break;
-        default:
-          iselig = 0;
-          break;
-      }
-
-      if (i == 1) {
-        const isbal = await stakeRegister.findOne({ user: currentReferrerId });
-        await registration.updateOne(
-          { user: currentReferrerId },
-          {
-            $inc: { stakedirectbusiness: stakeRecord.amount },
-          }
-        );
-
-        const direct_ref = (10 / 100) * stakeRecord.amount;
-
-        if (isbal) {
-          const totalIncome = isbal.totalIncome + direct_ref;
-          const capping = isbal.return;
-          let income_status = "";
-
-          if (capping >= totalIncome) {
-            income_status = "Credit";
-            await stakeRegister.updateOne(
-              { user: currentReferrerId },
-              {
-                $inc: {
-                  totalIncome: direct_ref,
-                  wallet_referral: direct_ref,
-                  referalIncome: direct_ref,
-                },
-              }
-            );
-
-            await levelStake.create({
-              sender: stakeRecord.user,
-              receiver: currentReferrerId,
-              level: i,
-              amount: stakeRecord.amount,
-              income: direct_ref,
-              percent: 10,
-              income_type: "Referral Income",
-              income_status,
-              txHash,
-            });
-          } else {
-            income_status = "Lapse";
-            await stakeRegister.updateOne(
-              { user: currentReferrerId },
-              {
-                $inc: { wallet_tank: direct_ref },
-              }
-            );
-          }
-        }
-      } else {
-        const isbal = await stakeRegister.findOne({ user: currentReferrerId });
-        const levper = await levelPercent(i);
-        const levelIncome = (levper / 100) * stakeRecord.amount;
-        let income_status = "";
-
-        if (isbal) {
-          const totalIncome = isbal.totalIncome + levelIncome;
-          const capping = isbal.return;
-
-          if (capping >= totalIncome) {
-            if (iselig == 1) {
-              income_status = "Credit";
-              await stakeRegister.updateOne(
-                { user: currentReferrerId },
-                {
-                  $inc: {
-                    totalIncome: levelIncome,
-                    wallet_referral: levelIncome,
-                    levelIncome: levelIncome,
-                  },
-                }
-              );
-
-              await levelStake.create({
-                sender: stakeRecord.user,
-                receiver: currentReferrerId,
-                level: i,
-                amount: stakeRecord.amount,
-                income: levelIncome,
-                percent: levper,
-                income_type: "Level Income",
-                income_status,
-                txHash,
-              });
-            } else {
-              income_status = "Lapse Direct Cond";
-              await stakeRegister.updateOne(
-                { user: currentReferrerId },
-                {
-                  $inc: { lapseIncome: levelIncome },
-                }
-              );
-            }
-          } else {
-            income_status = "Lapse Capping Limit";
-            await stakeRegister.updateOne(
-              { user: currentReferrerId },
-              {
-                $inc: { wallet_tank: levelIncome },
-              }
-            );
-          }
-        } else {
-          income_status = "Lapse Not Staked";
-        }
-      }
-
-      i++;
-      currentReferrerId = record.referrer;
-    }
-
-    await stake2.updateOne({ txHash }, { $set: { cal_status: 1 } });
-    return true;
-  } catch (error) {
-    console.error(error);
-    return false;
-  }
-}
 
 async function getLevelIds(user) {
   try {
@@ -846,22 +614,6 @@ async function level(txHash) {
   }
 }
 
-async function levelIncome() {
-  const record = await stake2.findOne({ cal_status: 0 }).exec();
-  //console.log("record :: ",record)
-  if (record) {
-    let levells = await level(record.txHash);
-    //const stakeAmt = record.amount;
-    console.log("Level Income Sent for trnsaction :: ", record.txHash);
-    // const nextCheckTime = new Date(currentTime.getTime() + 24 * 30 * 60 * 60 * 1000); for 24 horurs
-    // directStakeCount
-    // levelStakeBonus
-    //await calculateDailyReward()
-  } else {
-    console.log("No Level Income to Send");
-  }
-}
-
 async function leveltop(txHash) {
   try {
     if (txHash != "") {
@@ -875,422 +627,7 @@ async function leveltop(txHash) {
   }
 }
 
-async function findUplinestop(txHash, uplines = []) {
-  try {
-    // Find the Topup record using txHash
-    const rec = await Topup.findOne({ txHash }).exec();
 
-    // Find the referrer for the user in the Topup record
-    const usei = await registration
-      .findOne({ user: rec.user }, { referrer: 1 })
-      .exec();
-    let currentReferrerId = usei.referrer;
-    let i = 1;
-
-    // Loop through the referrer chain until a certain level or no more referrers
-    while (currentReferrerId && i < 16) {
-      // Find the referrer's record with directStakeCount and referrer information
-      const record = await registration
-        .findOne(
-          { user: currentReferrerId },
-          { directStakeCount: 1, referrer: 1 }
-        )
-        .exec();
-      if (!record) {
-        break; // Exit the loop if no record found
-      }
-
-      let iselig = 0;
-
-      // Check eligibility based on directStakeCount and level
-      switch (true) {
-        case (record.directStakeCount ? record.directStakeCount : 0) >= 1 &&
-          i < 4:
-        case (record.directStakeCount ? record.directStakeCount : 0) >= 3 &&
-          i < 7:
-        case (record.directStakeCount ? record.directStakeCount : 0) >= 5 &&
-          i < 11:
-        case (record.directStakeCount ? record.directStakeCount : 0) >= 7 &&
-          i < 16:
-          iselig = 1;
-          break;
-        default:
-          iselig = 0;
-          break;
-      }
-
-      // Handle operations based on the level
-      if (i == 1) {
-        // Handle first level operations
-        const isbal = await stakeRegister.findOne({ user: currentReferrerId });
-        await registration.updateOne(
-          { user: currentReferrerId },
-          { $inc: { stakedirectbusiness: rec.amount } }
-        );
-        const direct_ref = (10 / 100) * rec.amount;
-
-        if (isbal) {
-          var totalIncome = isbal.totalIncome + direct_ref;
-          var capping = isbal.return;
-          var income_status = capping >= totalIncome ? "Credit" : "Lapse";
-          if (capping >= totalIncome) {
-            await stakeRegister.updateOne(
-              { user: currentReferrerId },
-              {
-                $inc: {
-                  totalIncome: direct_ref,
-                  wallet_referral: direct_ref,
-                  referalIncome: direct_ref,
-                },
-              }
-            );
-
-            // Create levelStake record for Referral Income Topup
-            await levelStake.create({
-              sender: rec.user,
-              receiver: currentReferrerId,
-              level: i,
-              amount: rec.amount,
-              income: direct_ref,
-              percent: 10,
-              income_type: "Referral Income Topup",
-              income_status,
-              txHash,
-            });
-          } else {
-            await stakeRegister.updateOne(
-              { user: currentReferrerId },
-              { $inc: { wallet_tank: direct_ref } }
-            );
-          }
-        }
-      } else {
-        // Handle other level operations
-        const isbal = await stakeRegister.findOne({ user: currentReferrerId });
-        const levper = await levelPercent(i);
-        const levelIncome = (levper / 100) * rec.amount;
-        var income_status = "";
-
-        if (isbal) {
-          var totalIncome = isbal.totalIncome + levelIncome;
-          var capping = isbal.return;
-          income_status =
-            capping >= totalIncome ? "Credit" : "Lapse Capping Limit";
-          if (capping >= totalIncome) {
-            if (iselig == 1) {
-              await stakeRegister.updateOne(
-                { user: currentReferrerId },
-                {
-                  $inc: {
-                    totalIncome: levelIncome,
-                    wallet_referral: levelIncome,
-                    levelIncome: levelIncome,
-                  },
-                }
-              );
-
-              // Create levelStake record for Level Income Topup
-              await levelStake.create({
-                sender: rec.user,
-                receiver: currentReferrerId,
-                level: i,
-                amount: rec.amount,
-                income: levelIncome,
-                percent: levper,
-                income_type: "Level Income Topup",
-                income_status,
-                txHash,
-              });
-            } else {
-              await stakeRegister.updateOne(
-                { user: currentReferrerId },
-                { $inc: { lapseIncome: levelIncome } }
-              );
-            }
-          } else {
-            await stakeRegister.updateOne(
-              { user: currentReferrerId },
-              { $inc: { wallet_tank: levelIncome } }
-            );
-          }
-        }
-      }
-
-      i++;
-      currentReferrerId = record.referrer;
-    }
-
-    // Update cal_status for the Topup record
-    await Topup.updateOne({ txHash }, { $set: { cal_status: 1 } });
-
-    return true; // Return true if the process completes successfully
-  } catch (error) {
-    console.error(error);
-    return false; // Return false if there's an error
-  }
-}
-
-async function topuplevelIncome() {
-  const record = await Topup.findOne({ cal_status: 0 }).exec();
-  //console.log("record :: ",record)
-  if (record) {
-    let levells = await leveltop(record.txHash);
-    //const stakeAmt = record.amount;
-    console.log("Topup Level Income Sent for trnsaction :: ", record.txHash);
-    // const nextCheckTime = new Date(currentTime.getTime() + 24 * 30 * 60 * 60 * 1000); for 24 horurs
-    // directStakeCount
-    // levelStakeBonus
-    //await calculateDailyReward()
-  } else {
-    console.log("No Level Income to Send");
-  }
-}
-
-async function RecurringlevelIncome() {
-  try {
-    const records = await dailyroi.find({ recurr_status: 0 }).limit(100).exec();
-
-    for (let rec of records) {
-      let uuupids = await getLevelIdsTill(rec.user, "5");
-      console.log("uuupids ", uuupids);
-      for (let i = 0; i < uuupids.length; i++) {
-        const record = await registration
-          .findOne(
-            { user: uuupids[i] },
-            { directStakeCount: 1, referrer: 1, stakedirectbusiness: 1 }
-          )
-          .exec();
-
-        if (!record) {
-          break;
-        }
-
-        const levper = await levelPercentRecurr(i + 1);
-        const levelIncome = (levper / 100) * rec.income;
-
-        const isbal = await stakeRegister.findOne({ user: uuupids[i] });
-
-        if (isbal) {
-          // Example usage
-          const startDate = new Date(isbal.createdAt);
-          const currentDate = new Date();
-          const endDate = new Date(currentDate);
-
-          //console.log("Join Date ",isbal.createdAt);
-
-          const diffTime = Math.abs(endDate - startDate);
-          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-          //console.log(`Difference in days: ${diffDays}`);
-
-          const diffMonths = Math.floor(diffDays / 30);
-          //const testdiffMonths = Math.floor((35/30));
-
-          // console.log(`Difference in months: ${diffMonths}`);
-          // console.log(`testdiffMonths in months: ${testdiffMonths}`);
-
-          if (diffMonths < 1) {
-            var mnth = 1;
-          } else {
-            var mnth = diffMonths + 1;
-          }
-
-          const dateRange = await getMonthRange(isbal.createdAt);
-          const alldetails = await sumBizInAMonth(
-            isbal.createdAt,
-            dateRange.startDate,
-            dateRange.endDate,
-            uuupids[i]
-          );
-          console.log("wall address ", uuupids[i]);
-          console.log(`all_business_detail `, alldetails);
-
-          var prevmonthbiz = alldetails.prevBiz;
-          var prevmonthDir = alldetails.prevDir;
-          var currentbiz = alldetails.monthBiz;
-          var currentDir = alldetails.monthDir;
-
-          var totalStakedirectbusiness = 0;
-          var directStake = 0;
-
-          if (mnth < 2) {
-            totalStakedirectbusiness = await calculateDirectsesy(uuupids[i]);
-            directStake = record.directStakeCount;
-          } else {
-            var emnth = mnth - 1;
-            var cfdcount = 5 * emnth;
-            var cfbiz = 100 * 5 * emnth;
-            var extdir = 0;
-            var extbiz = 0;
-            if (prevmonthDir > cfdcount) {
-              extdir = prevmonthDir - cfdcount;
-            }
-
-            if (prevmonthbiz > cfbiz) {
-              extbiz = prevmonthbiz - cfbiz;
-            }
-            totalStakedirectbusiness = currentbiz;
-            totalStakedirectbusiness = totalStakedirectbusiness + extbiz;
-            directStake = currentDir;
-            directStake = directStake + extdir;
-          }
-
-          var dcnt = i + 1;
-          var biz = dcnt * 100;
-
-          console.log("totalStakedirectbusiness ", totalStakedirectbusiness);
-          console.log("directStake ", directStake);
-          console.log("biz ", biz);
-          console.log("dcnt ", dcnt);
-
-          var iselig =
-            (directStake ? directStake : 0) >= dcnt ||
-              totalStakedirectbusiness >= biz
-              ? 1
-              : 0;
-          console.log("iselig ", iselig);
-          console.log("mnth ", mnth);
-
-          var totalIncome = isbal.totalIncome + levelIncome;
-          var capping = isbal.return;
-          var income_status = "";
-
-          if (capping >= totalIncome && iselig == 1) {
-            income_status = "Credit";
-            const recupd = await stakeRegister.updateOne(
-              { user: uuupids[i] },
-              {
-                $inc: { wallet_recurr: levelIncome, recurrIncome: levelIncome },
-              }
-            );
-
-            if (recupd.modifiedCount > 0) {
-              await levelRecurr.create({
-                sender: rec.user,
-                receiver: uuupids[i],
-                level: dcnt,
-                amount: rec.income,
-                income: levelIncome,
-                percent: levper,
-                monthtilljoin: mnth,
-                directs: record.directStakeCount,
-                reqdirects: dcnt,
-                directbiz: totalStakedirectbusiness,
-                reqbiz: biz,
-                txHash: rec.txHash,
-                income_status: income_status,
-              });
-            }
-
-            // const viewdata = {
-            //   sender: rec.user,
-            //   receiver: uuupids[i],
-            //   level: ie,
-            //   amount: rec.income,
-            //   income: levelIncome,
-            //   percent: levper,
-            //   monthtilljoin: mnth,
-            //   directs : record.directStakeCount,
-            //   reqdirects : dcnt,
-            //   directbiz : totalStakedirectbusiness,
-            //   reqbiz : biz,
-            //   income_status: income_status
-            // }
-
-            // console.log("recurring income ",viewdata)
-          } else if (capping >= totalIncome && iselig == 0) {
-            income_status = "Lapse Condition";
-            // console.log("income_status ",income_status)
-            // const viewdata = {
-            //   sender: rec.user,
-            //   receiver: uuupids[i],
-            //   level: ie,
-            //   amount: rec.income,
-            //   income: levelIncome,
-            //   percent: levper,
-            //   monthtilljoin: mnth,
-            //   directs : record.directStakeCount,
-            //   reqdirects : dcnt,
-            //   directbiz : totalStakedirectbusiness,
-            //   reqbiz : biz,
-            //   income_status: income_status
-            // }
-
-            // console.log("recurring income ",viewdata)
-
-            await levelRecurrLapse.create({
-              sender: rec.user,
-              receiver: uuupids[i],
-              level: dcnt,
-              amount: rec.income,
-              income: levelIncome,
-              percent: levper,
-              monthtilljoin: mnth,
-              directs: record.directStakeCount,
-              reqdirects: dcnt,
-              directbiz: totalStakedirectbusiness,
-              reqbiz: biz,
-              txHash: rec.txHash,
-              income_status: income_status,
-            });
-          } else {
-            income_status = "Lapse Capping";
-            // console.log("income_status ",income_status)
-            // const viewdata = {
-            //   sender: rec.user,
-            //   receiver: uuupids[i],
-            //   level: ie,
-            //   amount: rec.income,
-            //   income: levelIncome,
-            //   percent: levper,
-            //   monthtilljoin: mnth,
-            //   directs : record.directStakeCount,
-            //   reqdirects : dcnt,
-            //   directbiz : totalStakedirectbusiness,
-            //   reqbiz : biz,
-            //   income_status: income_status
-            // }
-
-            await levelRecurrLapse.create({
-              sender: rec.user,
-              receiver: uuupids[i],
-              level: dcnt,
-              amount: rec.income,
-              income: levelIncome,
-              percent: levper,
-              monthtilljoin: mnth,
-              directs: record.directStakeCount,
-              reqdirects: dcnt,
-              directbiz: totalStakedirectbusiness,
-              reqbiz: biz,
-              txHash: rec.txHash,
-              income_status: income_status,
-            });
-
-            //console.log("recurring income ",viewdata)
-          }
-        }
-      }
-
-      await dailyroi.updateOne(
-        { _id: rec._id },
-        { $set: { recurr_status: 1 } }
-      );
-    }
-
-    if (records.length === 0) {
-      console.log("No Recurring Level Income to Send");
-    }
-  } catch (error) {
-    console.error("Error in RecurringlevelIncome:", error);
-  }
-}
-
-// async function calculateDailyReward(totalReturn, investmentDays) {
-//   // Calculate daily reward
-//   const dailyReward = totalReturn / investmentDays;
-
-//   return dailyReward;
-// }
 
 async function getReward(ratio, token) {
   if (ratio == "10" && token == "WYZ-stUSDT") {
@@ -1541,170 +878,6 @@ async function upids(user) {
   try {
     const uplevels = await getLevelIds(user);
     return uplevels;
-  } catch (error) {
-    console.log(error);
-  }
-}
-
-async function roiwallet() {
-  try {
-    const formattedDateTime = moment()
-      .tz("Asia/Kolkata")
-      .format("YYYY-MM-DD HH:mm:ss");
-
-    const stakings = await stake2.find({}).lean();
-    const calculatedDataList = await Promise.all(
-      stakings.map(async (entry) => {
-        const stakeregis = await registration.findOne(
-          { user: entry.user },
-          { return: 1, totalIncome: 1 }
-        );
-        if (stakeregis) {
-          const perdayroi = entry.perdayroi;
-          const allincome = stakeregis.totalIncome ? stakeregis.totalIncome : 0;
-          const total = allincome + perdayroi;
-          const income_status =
-            stakeregis.return >= total ? "Credit" : "Lapse Capping";
-          if (income_status == "Credit") {
-            return {
-              user: entry.user,
-              stakeid: entry._id.toString(),
-              income: perdayroi,
-              amount: entry.amount,
-              ratio: entry.ratio,
-              token: entry.token,
-              income_status: income_status,
-              totalIncome: allincome,
-              capping: stakeregis.return,
-              send_status: entry.send_status,
-              txHash: entry.txHash,
-            };
-          } else {
-            return null;
-          }
-        } else {
-          console.log("No ROI data found for user:", entry.user);
-          return null;
-        }
-      })
-    );
-
-    // Remove null entries from calculatedDataList
-    const filteredDataList = calculatedDataList.filter(
-      (entry) => entry !== null
-    );
-
-    // Step 3: Update the registration table using bulk operations
-    const bulkUpdateOps = filteredDataList.map((data) => {
-      if (data.income_status === "Credit") {
-        return {
-          updateOne: {
-            filter: { user: data.user },
-            update: {
-              $inc: {
-                wallet_income: data.income,
-                roiincome: data.income,
-                totalIncome: data.income,
-              },
-            },
-          },
-        };
-      } else {
-        return {
-          updateOne: {
-            filter: { user: data.user },
-            update: { $inc: { wallet_lapse: data.income } },
-          },
-        };
-      }
-    });
-
-    if (bulkUpdateOps.length > 0) {
-      await registration.bulkWrite(bulkUpdateOps);
-    }
-
-    // Step 4: Insert the calculated data into another table using bulk insert
-    if (filteredDataList.length > 0) {
-      await dailyroi.insertMany(filteredDataList);
-    }
-  } catch (error) {
-    console.log(error);
-  }
-}
-
-async function topuproi() {
-  try {
-    const formattedDateTime = moment()
-      .tz("Asia/Kolkata")
-      .format("YYYY-MM-DD HH:mm:ss");
-
-    const stakings = await Topup.find({}).lean();
-    const calculatedDataList = await Promise.all(
-      stakings.map(async (entry) => {
-        const stakeregis = await stakeRegister.findOne(
-          { user: entry.user },
-          { return: 1, totalIncome: 1 }
-        );
-        if (stakeregis) {
-          const perdayroi = entry.perdayroi;
-          const allincome = stakeregis.totalIncome ? stakeregis.totalIncome : 0;
-          const total = allincome + perdayroi;
-          const income_status =
-            stakeregis.return >= total ? "Credit" : "Lapse Capping";
-
-          return {
-            user: entry.user,
-            stakeid: entry._id.toString(),
-            income: perdayroi,
-            amount: entry.amount,
-            ratio: entry.plan,
-            token: entry.plan,
-            income_status: income_status,
-            totalIncome: allincome,
-            capping: stakeregis.return,
-            txHash: entry.txHash,
-          };
-        } else {
-          console.log("No ROI data found for user:", entry.user);
-          return null;
-        }
-      })
-    );
-
-    // Remove null entries from calculatedDataList
-    const filteredDataList = calculatedDataList.filter(
-      (entry) => entry !== null
-    );
-
-    // Step 3: Update the registration table using bulk operations
-    const bulkUpdateOps = filteredDataList.map((data) => {
-      if (data.income_status === "Credit") {
-        return {
-          updateOne: {
-            filter: { user: data.user },
-            update: {
-              $inc: { wallet_roi: data.income, totalIncome: data.income },
-            },
-          },
-        };
-      } else {
-        return {
-          updateOne: {
-            filter: { user: data.user },
-            update: { $inc: { wallet_tank: data.income } },
-          },
-        };
-      }
-    });
-
-    if (bulkUpdateOps.length > 0) {
-      await stakeRegister.bulkWrite(bulkUpdateOps);
-    }
-
-    // Step 4: Insert the calculated data into another table using bulk insert
-    if (filteredDataList.length > 0) {
-      await dailyroi.insertMany(filteredDataList);
-    }
   } catch (error) {
     console.log(error);
   }
@@ -2390,168 +1563,6 @@ function calculateIncomeAndPackage(investment, planname) {
     perDayIncome: perDayIncome,
     packageName: packageName,
   };
-}
-
-async function levelOnRoi() {
-  try {
-    const allrois = await dailyroi
-      .find({ level_status: 0, send_status: 0 })
-      .limit(200)
-      .lean()
-      .exec();
-    console.log("allrois: ", allrois);
-
-    if (allrois.length > 0) {
-      const levelStakeOps = [];
-
-      for (const rec of allrois) {
-        try {
-          const oku = await registration
-            .findOne(
-              { user: rec.user, referrerId: { $ne: 0 } },
-              { referrer: 1, totalIncome: 1, return: 1 }
-            )
-            .lean()
-            .exec();
-          if (oku) {
-            let currentReferrerId = oku.referrer;
-            let i = 1;
-
-            while (currentReferrerId) {
-              try {
-                const record = await registration
-                  .findOne(
-                    { user: currentReferrerId },
-                    {
-                      directStakeCount: 1,
-                      referrer: 1,
-                      totalIncome: 1,
-                      return: 1,
-                    }
-                  )
-                  .lean()
-                  .exec();
-                if (!record) break;
-
-                let iselig = 0;
-                const directStakeCount = record.directStakeCount
-                  ? record.directStakeCount
-                  : 0;
-
-                if (i >= 1 && i <= 3 && directStakeCount >= 1) {
-                  iselig = 1;
-                } else if (i > 3 && i <= 5 && directStakeCount >= 3) {
-                  iselig = 1;
-                } else if (i > 5 && i <= 10 && directStakeCount >= 5) {
-                  iselig = 1;
-                } else if (i > 10 && i <= 15 && directStakeCount >= 7) {
-                  iselig = 1;
-                } else if (i > 15 && i <= 20 && directStakeCount >= 10) {
-                  iselig = 1;
-                }
-
-                if (iselig === 1) {
-                  const incomeData = {
-                    level: i,
-                    percent: await levelPercent(i),
-                    type: "Level Income",
-                    amount: rec.income,
-                    income: ((await levelPercent(i)) / 100) * rec.income,
-                  };
-
-                  const nowinc = record.totalIncome + incomeData.income;
-
-                  if (record.return >= nowinc) {
-                    console.log("cmoin here");
-                    await registration.updateOne(
-                      { user: currentReferrerId },
-                      {
-                        $inc: {
-                          totalIncome: incomeData.income,
-                          wallet_income: incomeData.income,
-                          roilevelIncome: incomeData.income,
-                        },
-                      }
-                    );
-
-                    await stake2.updateOne(
-                      { txHash: rec.txHash },
-                      {
-                        $inc: {
-                          incomesent: incomeData.income,
-                        },
-                      }
-                    );
-
-                    levelStakeOps.push({
-                      insertOne: {
-                        document: {
-                          sender: rec.user,
-                          receiver: currentReferrerId,
-                          level: incomeData.level,
-                          amount: rec.amount,
-                          income: incomeData.income,
-                          percent: incomeData.percent,
-                          income_type: incomeData.type,
-                          txHash: rec.txHash,
-                        },
-                      },
-                    });
-
-                    const invst = await stake2.findOne(
-                      { txHash: rec.txHash },
-                      { incomesent: 1 }
-                    );
-                    const incper = (invst.incomesent / rec.amount) * 100;
-                    if (incper >= 60) {
-                      await stake2.updateOne(
-                        { txHash: rec.txHash },
-                        { $set: { send_status: 1 } }
-                      );
-                    }
-                  }
-                }
-
-                i++;
-                if (i === 21) break;
-                currentReferrerId = record.referrer;
-              } catch (innerError) {
-                console.error(
-                  `Error processing level income for referrerId ${currentReferrerId}: `,
-                  innerError
-                );
-              }
-            }
-          }
-          await dailyroi.updateOne(
-            { _id: rec._id },
-            { $set: { level_status: 1 } }
-          );
-        } catch (referrerError) {
-          console.error(
-            `Error processing daily ROI for user ${rec.user}: `,
-            referrerError
-          );
-        }
-      }
-
-      if (levelStakeOps.length > 0) {
-        console.log("Submitting bulk operations for levelStake");
-        try {
-          await levelStake.bulkWrite(levelStakeOps);
-        } catch (bulkWriteError) {
-          console.error(
-            "Error executing bulk write for levelStake: ",
-            bulkWriteError
-          );
-        }
-      }
-    } else {
-      console.log("No Level Income to Send");
-    }
-  } catch (error) {
-    console.error("Error in levelOnRoi: ", error);
-  }
 }
 
 async function setPoolAchievers() {

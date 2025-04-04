@@ -14,16 +14,13 @@ const newuserplaceSchema = new Schema({
     type: Number,
     required: true
   },
-  matrix: {
+  poolId: {
     type: Number,
     required: true
   },
-  slotId: {
+  packageId: {
     type: Number,
     required: true
-  },
-  level: {
-    type: Number,
   },
   cycle: {
     type: Number,
@@ -43,7 +40,7 @@ const newuserplaceSchema = new Schema({
 });
 
 newuserplaceSchema.index(
-  { user: 1, referrer: 1, place: 1, matrix: 1, slotId : 1, level :1, cycle : 1, txHash: 1 },
+  { user: 1, referrer: 1, place: 1, packageId: 1, poolId : 1, cycle : 1, txHash: 1 },
   { unique: true }
 );
 

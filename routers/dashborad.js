@@ -7,7 +7,7 @@ const moment = require("moment-timezone");
 const WithdrawalModel = require("../model/withdraw");
 const { verifyToken } = require("../Middleware/jwtToken");
 const { compareSync } = require("bcrypt");
-const SlotPurchased = require("../model/slotPurchased");
+const SlotPurchased = require("../model/packagebuy");
 const UserIncome = require("../model/userIncome");
 
 // router.get("/dashborad", async (req, res) => {

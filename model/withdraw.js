@@ -6,37 +6,17 @@ const withdrawalSchema = new Schema({
     type: String,
     required: true
   },
-  withdrawAmount: {
+  amount: {
     type: Number,
     required: true
   },
-  withdrawToken: {
+  netUsdAmt: {
     type: Number,
     required: true
   },
-  sendToken: {
+  netPolAmt: {
     type: Number,
     default: 0
-  },
-  rate: {
-    type: Number,
-    required: true
-  },
-  pay_rate: {
-    type: Number,
-    default : 0
-  },
-  wallet_type: {
-    type: String,
-    required: true
-  },
-  isapprove : {
-    type: Boolean,
-    default : false
-  },
-  isreject : {
-    type: Boolean,
-    default : false
   },
   trxnHash : {
     type: String,

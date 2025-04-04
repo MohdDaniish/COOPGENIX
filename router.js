@@ -5,11 +5,7 @@ const mongoose = require("mongoose");
 const registration = require("./model/registration");
 const { getAllUsers } = require("./test");
 const stake2 = require("./model/stake");
-const levelStake = require("./model/levelStake");
 const withdraw = require("./model/withdraw");
-const signup = require('./model/signup');
-const dailyroi = require("./model/dailyroi")
-
 const withdraws = require("./model/withdraw");
 const crypto = require('crypto');
 const Web3 = require("web3");
@@ -480,12 +476,9 @@ router.get("/all-history", async (req, res) => {
 
 const { Aggregate } = require('mongoose');
 const { verifyToken } = require("./Middleware/jwtToken");
-const openlevel = require("./model/openlevels");
 const newuserplace = require("./model/newuserplace");
 const reEntry = require("./model/reEntry");
 const UserIncome = require("./model/userIncome");
-const newuserplace2 = require("./model/newuserplace2");
-const newuserplace3 = require("./model/newuserplace3");
 const SponsorIncome = require("./model/sponsorincome");
 router.get("/tvl", async (req, res) => {
   try {
@@ -623,328 +616,6 @@ router.get("/Registration", async (req, res) => {
   }
 });
 
-router.post('/get-level-stack', async (req, res) => {
-  try {
-    const { walletAddress,sortby, page } = req.body; // Extract walletAddress from the request body
-    const PAGE_SIZE = 10; 
-    const pageNumber = page; // Specify the desired page number
-    const skip = pageNumber > 1 ? (pageNumber - 1) * PAGE_SIZE : 0; // Adjust skip for the first page
-
-    // Find the levelStake data for the provided walletAddress, sorted based on sortby
-    let levelStakeData;
-    if (sortby === "ALL") {
-      levelStakeData = await levelStake
-        .find({ receiver: walletAddress, income_type : "Level Income" })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(PAGE_SIZE);
-    } else if (sortby != "ALL") {
-      levelStakeData = await levelStake
-        .find({ receiver: walletAddress,level : sortby, income_type : "Level Income" })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(PAGE_SIZE);
-    }
-
-    if (!levelStakeData || levelStakeData.length === 0) {
-      // No data found for the provided wallet address
-      return res.status(404).json({ message: 'Data not found for the provided wallet address' });
-    }
-    const levcount = await levelStake.countDocuments({ receiver: walletAddress,income_type : "Level Income"});
-    // Add userId to each levelStakeData entry by fetching it from the Registration schema
-    const modifiedData = await Promise.all(levelStakeData.map(async entry => {
-      const registrationData = await registration.findOne({ user: entry.sender }, { userId: 1 }).exec();
-      return {
-        ...entry.toObject(),
-        userId: registrationData ? registrationData.userId : null
-      };
-    }));
-
-    // Return the modified data
-    return res.status(200).json({ data: modifiedData,
-      record_count : levcount
-     });
-  } catch (error) {
-    // Error occurred while fetching data
-    console.error('Error fetching plan data:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-router.post('/get-level-registration', async (req, res) => {
-  try {
-    const { walletAddress,sortby, page } = req.body; // Extract walletAddress from the request body
-    const PAGE_SIZE = 10; 
-    const pageNumber = page; // Specify the desired page number
-    const skip = pageNumber > 1 ? (pageNumber - 1) * PAGE_SIZE : 0; // Adjust skip for the first page
-
-    // Find the levelStake data for the provided walletAddress, sorted based on sortby
-    let levelStakeData;
-    if (sortby === "ALL") {
-      levelStakeData = await levelStake
-        .find({ receiver: walletAddress, income_type : "Registration Level Income" })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(PAGE_SIZE);
-    } else if (sortby != "ALL") {
-      levelStakeData = await levelStake
-        .find({ receiver: walletAddress,level : sortby, income_type : "Registration Level Income" })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(PAGE_SIZE);
-    }
-
-    if (!levelStakeData || levelStakeData.length === 0) {
-      // No data found for the provided wallet address
-      return res.status(404).json({ message: 'Data not found for the provided wallet address' });
-    }
-    const levcount = await levelStake.countDocuments({ receiver: walletAddress,income_type : "Registration Level Income"});
-    // Add userId to each levelStakeData entry by fetching it from the Registration schema
-    const modifiedData = await Promise.all(levelStakeData.map(async entry => {
-      const registrationData = await registration.findOne({ user: entry.sender }, { userId: 1 }).exec();
-      return {
-        ...entry.toObject(),
-        userId: registrationData ? registrationData.userId : null
-      };
-    }));
-
-    // Return the modified data
-    return res.status(200).json({ data: modifiedData,
-      record_count : levcount
-     });
-  } catch (error) {
-    // Error occurred while fetching data
-    console.error('Error fetching plan data:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-router.post('/get-level-sponsor', async (req, res) => {
-  try {
-    const { walletAddress,sortby, page } = req.body; // Extract walletAddress from the request body
-    const PAGE_SIZE = 10; 
-    const pageNumber = page; // Specify the desired page number
-    const skip = pageNumber > 1 ? (pageNumber - 1) * PAGE_SIZE : 0; // Adjust skip for the first page
-
-    // Find the levelStake data for the provided walletAddress, sorted based on sortby
-    let levelStakeData;
-    if (sortby === "ALL") {
-      levelStakeData = await levelStake
-        .find({ receiver: walletAddress, income_type : "Referral Income" })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(PAGE_SIZE);
-    } else if (sortby != "ALL") {
-      levelStakeData = await levelStake
-        .find({ receiver: walletAddress,level : sortby, income_type : "Referral Income" })
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(PAGE_SIZE);
-    }
-
-    if (!levelStakeData || levelStakeData.length === 0) {
-      // No data found for the provided wallet address
-      return res.status(404).json({ message: 'Data not found for the provided wallet address' });
-    }
-    const levcount = await levelStake.countDocuments({ receiver: walletAddress,income_type : "Referral Income"});
-    // Add userId to each levelStakeData entry by fetching it from the Registration schema
-    const modifiedData = await Promise.all(levelStakeData.map(async entry => {
-      const registrationData = await registration.findOne({ user: entry.sender }, { userId: 1 }).exec();
-      return {
-        ...entry.toObject(),
-        userId: registrationData ? registrationData.userId : null
-      };
-    }));
-
-    // Return the modified data
-    return res.status(200).json({ data: modifiedData,
-      record_count : levcount
-     });
-  } catch (error) {
-    // Error occurred while fetching data
-    console.error('Error fetching plan data:', error);
-    return res.status(500).json({ error: 'Internal Server Error' });
-  }
-});
-
-router.post("/dashboard", async (req, res) => {
-  try {
-    const { walletAddress } = req.body; // Extract walletAddress from the request body
-    console.log(walletAddress, "::::");
-
-    const dashboard = await registration
-      .findOne({ user: walletAddress })
-      .exec();
-
-      if(!dashboard){
-        return res
-        .status(404)
-        .json({ message: "Data not found for the provided wallet address" }); 
-      }
-
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-
-    const recurring = await levelRecurr
-      .find({
-        user: walletAddress,
-        createdAt: { $gte: startOfMonth, $lte: endOfMonth },
-      })
-      .exec();
-
-    const totalRecurringIncome = recurring.reduce(
-      (sum, record) => sum + record.amount,
-      0
-    );
-
-    // directs in month
-    const stakedirectCount = await stakedirect
-  .countDocuments({
-    referrer: walletAddress,
-    createdAt: { $gte: startOfMonth, $lte: endOfMonth },
-  })
-  .exec();
-    // directs in month
-  console.log(totalRecurringIncome)
-
-  const totalReferralIncome = await levelStake.aggregate([
-    {
-      $match: {
-        income_type: "Referral Income",
-        receiver: walletAddress
-      },
-    },
-    {
-      $group: {
-        _id: "$receiver",
-        totalIncome: { $sum: "$income" },
-      },
-    },
-  ]);
-
-  // to calculate 70 and 30 percent in diferent legs 
-        const records = await registration.find({ referrer: walletAddress }).sort({ staketeambusiness: -1 }).exec();
-        console.log("records :: ",records)
-        if(records.length > 0){
-        const highestValue = records[0].staketeambusiness;
-        var seventyPercentOfHighest = highestValue * 0.7;
-
-        var thirtyPercentOfRemainingSum = 0;
-
-        if (records.length > 1) {
-          // Step 4: Sum the remaining staketeambusiness values
-          const remainingSum = records.slice(1).reduce((acc, record) => acc + record.staketeambusiness, 0);
-          thirtyPercentOfRemainingSum = remainingSum * 0.3;
-        }
-
-        // Total calculated value
-        const totalCalculatedValue = seventyPercentOfHighest + thirtyPercentOfRemainingSum;
-      
-      } else {
-        var seventyPercentOfHighest = 0;
-        var thirtyPercentOfRemainingSum = 0;
-      }
-
-      console.log("seventyPercentOfHighest :: ",seventyPercentOfHighest)
-      console.log("thirtyPercentOfRemainingSum :: ",thirtyPercentOfRemainingSum)
-  // to calculate 70 and 30 percent in diferent legs 
-
-  // recurr level open
-      const stakedirectbusiness = dashboard.stakedirectbusiness
-      const directStakeCount = dashboard.directStakeCount
-      let isstake = await stakeRegister.findOne({ user : walletAddress })
-      var level = 0;
-      if(isstake){
-
-       // total withdraw
-
-    const totalAmountResult = await withdraws.aggregate([
-      {
-        $match: { user : walletAddress, isapprove : true }
-      },
-      {
-        $group: {
-          _id: null,
-          totalAmount: { $sum: "$withdrawAmount" }
-        }
-      }
-    ]);
-
-    // Check if any result is returned
-    if (totalAmountResult && totalAmountResult.length > 0) {
-      var totalAmount = totalAmountResult[0].totalAmount;
-    } else {
-      var totalAmount = 0;
-    }
-
-      isstake.totalWithdraw = totalAmount
-        
-      var referalIncomexx = isstake.referalIncome ? isstake.referalIncome : 0 
-      const firstDate = new Date(isstake.createdAt);
-      const currentDate = new Date();
-      const monthDiff = (currentDate.getFullYear() - firstDate.getFullYear()) * 12 +
-                  (currentDate.getMonth() - firstDate.getMonth());
-      console.log('Month count:', monthDiff);
-      const mnth = monthDiff+1;
-  
-      const totalStakedirectbusiness = stakedirectbusiness?stakedirectbusiness : 0;
-      const directCount = directStakeCount?directStakeCount : 0;
-      // direct team business or 1st level business 
-     
-      let biz1 = 100*1*mnth;
-      let biz2 = 100*2*mnth;
-      let biz3 = 100*3*mnth;
-      let biz4 = 100*4*mnth;
-      let biz5 = 100*5*mnth;
-
-      let dir1 = 1*mnth;
-      let dir2 = 2*mnth;
-      let dir3 = 3*mnth;
-      let dir4 = 4*mnth;
-      let dir5 = 5*mnth;
-      
-      if(directCount >= dir1 || totalStakedirectbusiness >= biz1){
-        level = 1;
-      } else if(directCount >= dir2 || totalStakedirectbusiness >= biz2){
-        level = 2;
-      } else if(directCount >= dir3 || totalStakedirectbusiness >= biz3){
-        level = 3;
-      } else if(directCount >= dir4 || totalStakedirectbusiness >= biz4){
-        level = 4;
-      } else if(directCount >= dir5 || totalStakedirectbusiness >= biz5){
-        level = 5;
-      }
-    } else {
-      var referalIncomexx = 0;
-    }
-    //console.log("totalAmountResult ",totalAmountResult)
-    // Extract the total amount from the result
-   
-
-  const data2 =  {
-    data : dashboard,
-    direct_income : referalIncomexx ? referalIncomexx : 0,
-    leg1 : seventyPercentOfHighest,
-    leg2 : thirtyPercentOfRemainingSum,
-    direct_in_month : stakedirectCount,
-    recurr_level_open : level,
-    recurr_income_month : totalRecurringIncome,
-    isstake : isstake?isstake:""
-  }
-    if (dashboard) {
-      return res.status(200).json({ data: data2 });
-    } else {
-      return res
-        .status(404)
-        .json({ message: "Data not found for the provided wallet address" });
-    }
-  } catch (error) {
-    // Error occurred while fetching data
-    console.error("Error fetching plan data:", error);
-    return res.status(500).json({ error: "Internal Server Error" });
-  }
-});
 
 router.post("/total-staking", async (req, res) => {
   try {
@@ -1832,18 +1503,14 @@ router.post('/directmember', async (req, res) => {
   
     // Use Promise.all to process all direct members concurrently
     const directMembersWithDetails = await Promise.all(directMembers.map(async (member) => {
-      // Find the name from the signup schema
-      const signupRecord = await signup.findOne({ userId: member.userId });
-      const name = signupRecord ? signupRecord.name : null;
-  
+     
       // Find the topup_amount from the stageregister schema
       const stakeRegisterRecord = await stakeRegister.findOne({ user: member.user });
       const topupAmount = stakeRegisterRecord ? stakeRegisterRecord.topup_amount : 0;
   
       // Add the name and total_staking to the member data
       return {
-        ...member.toObject(), // Convert the Mongoose document to a plain object
-        name,
+        ...member.toObject(), 
         total_staking: topupAmount
       };
     }));
@@ -3669,26 +3336,6 @@ router.get('/checkandupdatePool', async (req,res) => {
     return { monthBiz : totalSum, monthDir : count, prevBiz : prevBiz, prevDir :prevcount  };
   }
 
-  async function findAllDescendantsOld(referrer) {
-    const allUserIds = new Set();
-    let currentLevel = [referrer];
-  
-    while (currentLevel.length > 0) {
-      const directMembers = await newuserplace2.aggregate([
-        { $match: { referrer: { $in: currentLevel } } },
-        { $group: { _id: null, users: { $addToSet: "$user" } } }
-      ]);
-  
-      if (directMembers.length === 0) {
-        break;
-      }
-  
-      currentLevel = directMembers[0].users;
-      currentLevel.forEach(id => allUserIds.add(id));
-    }
-  
-    return Array.from(allUserIds);
-  }
   
   router.get('/todayBizWyzsUSDT', async (req, res) => {
 
@@ -3807,105 +3454,6 @@ router.get('/checkfirstinvest', async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Internal server error' });
-  }
-});
-
-router.get('/levelopenupdate', async (req, res) => {
-  try {
-    const records = await stake2.find({ level_update: 0 }).limit(1000).exec();
-    
-    let z=0;
-    for (let rec of records) {
-      const date = new Date(rec.createdAt); 
-      const txn_id = rec.txHash;
-      let uuupids = await getLevelIdsTill(rec.user, "5");
-      //console.log("uuupids ",uuupids)
-      for (let i = 0; i < uuupids.length; i++) {
-        
-        const stakedata = await stakeRegister.findOne({ user: uuupids[i] }, { openlevel: 1,createdAt:1 }).exec();
-        if(stakedata){
-        // Replace this with your actual date
-        const joining = new Date(stakedata.createdAt); // Replace this with your actual joining date
-        const year = joining.getUTCFullYear();
-        const month = joining.getUTCMonth();
-        const day = joining.getUTCDate();
-
-        const startDate = new Date(Date.UTC(year, month, day, 0, 0, 0));
-        const monthlevel = await openlevel.findOne({ 
-          user : uuupids[i]
-        })
-        if(!monthlevel){
-        const dtreco = [];
-        let currentStartDate = startDate;
-        // saving many records for five months
-
-        for (let k = 0; k < 5; k++) {
-          let currentEndDate = new Date(currentStartDate.getTime() + 30 * 24 * 60 * 60 * 1000); // Add 30 days in milliseconds
-          currentEndDate.setUTCHours(23, 59, 59);
-
-          const recrd = {
-            user: uuupids[i],
-            month: k+1,
-            startDate: currentStartDate,
-            endDate: currentEndDate
-          };
-
-          dtreco.push(recrd);
-          currentStartDate = new Date(currentEndDate.getTime() + 1 * 1000); // Set next start date to the second after current end date
-        }
-
-        // Insert records into the database
-        await openlevel.insertMany(dtreco);
-        }
-        if(stakedata){
-        console.log("date to find  ",date)
-        let ei = i + 1;
-        
-        if(stakedata.openlevel < ei ){
-        await stakeRegister.updateOne({ user: uuupids[i] }, { $set : { openlevel: ei } }) 
-        }
-         
-        const monthlevel = await openlevel.findOne({ 
-          user : uuupids[i],
-          startDate: { $lte: date },
-          endDate: { $gte: date } 
-        })
-
-        if(!monthlevel){
-        } else {
-          const uplevel = await stakeRegister.findOne({ user : uuupids[i] }, { openlevel : 1 })
-          if(ei > uplevel.openlevel){
-            await openlevel.updateOne({ 
-              _id : monthlevel._id,
-              level : { $lt : ei}
-            },
-            {
-              $set : { level : ei }
-            }
-          )
-          } else {
-            await openlevel.updateOne({ 
-              _id : monthlevel._id
-            },
-            {
-              $set : { level : uplevel.openlevel }
-            }
-          )
-          }
-        }
-        }
-      }
-      }
-
-      await stake2.updateOne({ _id : rec._id}, { $set : { level_update : 1 } });
-      z++;
-    }
-console.log("done");
-    if (records.length === 0) {
-      console.log("No Recurring Level Income to Send");
-    }
-  } catch (error) {
-    console.log("Error in RecurringlevelIncome:", error);
   }
 });
 
@@ -4093,56 +3641,6 @@ router.get('/seventythirty', async (req,res) => {
 
   })
 
-  router.post('/searchDownline', async (req, res) => {
-
-    try {
-      var {wallet_address, connectWallet}  = req.body;
-
-      if (!wallet_address) {
-        return res.status(400).json({ error: 'wallet_address is required', message : "wallet_address is required", status : false });
-      }
-
-      const isfind = await registration.findOne({ user : wallet_address })
-      if(!isfind){
-        const isid = await signup.findOne({ userId : wallet_address },{ wallet_add : 1 })
-        if(!isid){
-          return res.status(400).json({ error: 'No user found with this id', message : "No user found with this id", status : false });
-        }
-        wallet_address = isid.wallet_add
-      }
-
-      const allTeamMembers = await findAllDescendantsOld(connectWallet);
-  
-      const walletExists = allTeamMembers.includes(wallet_address);
-
-      if (walletExists) {
-       const regData = await registration.findOne({ user :  wallet_address })
-       const stakeReg = await stakeRegister.findOne({ user : wallet_address })
-       let dir_business = 0;
-       if(regData.directplusteambiz > 0){
-        dir_business = regData.directplusteambiz - regData.staketeambusiness
-       }
-       const teamcount = await findAllDescendantsOld(wallet_address);
-       const dtatoret = {
-        address : wallet_address,
-        totalStake : stakeReg.topup_amount?stakeReg.topup_amount:0,
-        directs : regData.directStakeCount?regData.directStakeCount:0,
-        directBusiness : dir_business,
-        team : teamcount.length,
-        teamBusiness : regData.staketeambusiness?regData.staketeambusiness:0,
-        rank : stakeReg.rank?stakeReg.rank:'',
-        pool : stakeReg.currentPool?stakeReg.currentPool:'',
-       }
-       return res.status(200).json({ data : dtatoret,  message : "", status : true });
-      } else {
-        return res.status(400).json({  message : "Not in your team", status : false });
-      }
-
-    } catch (err) {
-      console.error(err);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-});
 
 router.post('/userDetails', async (req, res) => {
   const {userId} = req.body;
@@ -4296,28 +3794,6 @@ router.post('/downlineteam', async (req, res) => {
     downline
   });
   //return downline;
-});
-
-router.post('/dailyroi', async (req, res) => {
-  
-    try {
-      const { wallet_address } = req.body;
-  
-      if (!wallet_address) {
-        return res.status(400).json({ error: 'walletAddress is required' });
-      }
-  
-      const dailyROIs = await dailyroi.find({ user: wallet_address }).sort({ createdAt: -1 }).limit(20).lean();
-  
-      return res.status(200).json({ 
-        status : true,
-        data : dailyROIs 
-      });
-    } catch (error) {
-      console.error('Error fetching daily ROI:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  
 });
 
 router.post('/withdrawworking', async (req, res) => {
@@ -5518,13 +4994,13 @@ router.get("/getDetailsByLevel", async (req, res) => {
     console.log("level ", level);
     console.log("page ", page);
     // const dd = await newuserplace.find({ user: address, poolId: poolid });
-    const result = await newuserplace2.aggregate([
+    const result = await newuserplace.aggregate([
       {
         $match: { user: address }
       },
       {
         $graphLookup: {
-          from: "newuserplace2",
+          from: "newuserplace",
           startWith: "$user",
           connectFromField: "user",
           connectToField: "referrer",
@@ -5592,91 +5068,6 @@ router.get("/getDetailsByLevel", async (req, res) => {
     //     message: "No records found!",
     //   });
     // }
-  } catch (e) {
-    console.log(e, "Error in getDetailsByLevel");
-  }
-});
-
-router.get("/getDetailsByLevel2", async (req, res) => {
-  try {
-    let { address, poolid, level, page } = req.query;
-    level = level - 1;
-    poolid = 1;
-    const limit = 100;
-    const skip = page > 1 ? limit * (page - 1) : 0;
-    console.log("address ", address);
-    console.log("poolid ", poolid);
-    console.log("level ", level);
-    console.log("page ", page);
-    // const dd = await newuserplace.find({ user: address, poolId: poolid });
-    const result = await newuserplace3.aggregate([
-      {
-        $match: { user: address }
-      },
-      {
-        $graphLookup: {
-          from: "newuserplace3",
-          startWith: "$user",
-          connectFromField: "user",
-          connectToField: "referrer",
-          maxDepth: 15, // Set this dynamically if needed
-          depthField: "level",
-          as: "referrals"
-        }
-      },
-      { $unwind: "$referrals" },
-      {
-        $group: {
-          _id: "$referrals._id",
-          address: { $first: "$referrals.user" },
-          time: { $first: "$referrals.createdAt" },
-          refAddress: { $first: "$referrals.referrer" },
-          level: { $first: "$referrals.level" }
-        }
-      },
-      {
-        $match: {
-          level: Number(level) // Filter for the specified level
-        }
-      },
-      {
-        $lookup: {
-          from: "registration", // The collection to join with
-          localField: "address", // Use "address" (derived from referrals.user)
-          foreignField: "user", // The field from the 'registration' collection
-          as: "userDetails" // The name of the new array field to add to the result
-        }
-      },
-      { $unwind: "$userDetails" }, // Unwind the userDetails array
-      {
-        $project: {
-          _id: 1,
-          address: 1,
-          time: 1,
-          refAddress: 1,
-          level: 1,
-          userId: "$userDetails.userId", // Include the userId from the registration schema
-          rank: "$userDetails.slot_rank", // Include the userId from the registration schema
-          directteam: "$userDetails.directCount"
-        }
-      },
-      {
-        $sort: {
-          time: -1 // Sort by the `time` field in descending order
-        }
-      }
-    ]);
-
-    console.log("result ", result);
-
-    // if (result.length > 0) {
-    res.send({
-      status: 200,
-      res: result,
-      // totalTeam: result.length,
-      message: "Data Found!",
-    });
-   
   } catch (e) {
     console.log(e, "Error in getDetailsByLevel");
   }
