@@ -94,7 +94,7 @@ async function processEvents(events) {
   //console.log("events.length ",events.length)
   for (let i = 0; i < events.length; i++) {
     const { blockNumber, transactionHash, returnValues, event } = events[i];
-    // console.log(blockNumber, transactionHash, event);
+     //console.log("event ",  event);
     const timestamp = await getTimestamp(blockNumber);
     if (event == "Registration") {
       try {
@@ -499,7 +499,7 @@ async function listEvent() {
     latestBlock > lastSyncBlock + 1000 ? lastSyncBlock + 1000 : latestBlock;
   //console.log(lastSyncBlock, toBlock);
   let events = await getEventReciept(lastSyncBlock, toBlock);
-  //console.log("events", events.length);
+  console.log("events", events.length);
 
   await processEvents(events);
   await updateBlock(toBlock);
@@ -509,13 +509,18 @@ async function listEvent() {
     setTimeout(listEvent, 5000);
   }
 } catch(error){
+  console.log("error ",error)
+  web3 = await getWorkingRpc();
   contract = new web3.eth.Contract(ABI, process.env.MAIN_CONTRACT);
   listEvent();
 }
 }
 
 const rpcUrls = [
+  'https://opbnb-testnet-rpc.bnbchain.org',
+  'https://opbnb-testnet.nodereal.io/v1/64a9df0874fb4a93b9d0a3849de012d3',
   'https://opbnb-testnet-rpc.publicnode.com',
+  'https://opbnb-testnet.nodereal.io/v1/e9a36765eb8a40b9bd12e680a1fd2bc5',
   process.env.RPC_URL, // fallback to env variable
 ];
 
