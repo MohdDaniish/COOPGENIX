@@ -4364,7 +4364,7 @@ router.get('/uwn6', async (req, res) => {
   }
 });
 
-router.get('/userDetailsbyWallet', async (req, res) => {
+router.get('/user-info', async (req, res) => {
   const {userId} = req.query
   try {
       // Find user details from registration schema by userId
