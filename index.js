@@ -4,12 +4,10 @@ const Web3 = require("web3");
 const express = require("express");
 const cors = require("cors");
 const config2 = require("./model/confiig");
-const stake = require("./model/stake");
 const app = express();
 const routes = require("./router");
 const cron = require("node-cron");
 const moment = require("moment-timezone");
-const stake2 = require("./model/stake");
 const registration = require("./model/registration");
 const withdraw = require("./model/withdraw");
 const Adminlogin = require("./routers/adminlogin");
@@ -21,7 +19,6 @@ const newuserplace = require("./model/newuserplace");
 const UserIncome = require("./model/userIncome");
 const reEntry = require("./model/reEntry");
 const SlotPurchased = require("./model/packagebuy");
-const WithdrawUNW6 = require("./model/withdrawUNW6");
 const SponsorIncome = require("./model/sponsorincome");
 const upgrade = require("./model/upgrade");
 const globalincome = require("./model/globaldownlineincome");
@@ -540,25 +537,6 @@ async function getWorkingRpc() {
   throw new Error('All RPC URLs failed');
 }
 
-async function getUserPlanUpdate() {
-  let total = await stake2.aggregate([
-    { $match: { userId: userId } },
-    {
-      $graphLookup: {
-        from: "registration",
-        startWith: "$userId",
-        connectFromField: "userId", // user_id for fetching
-        connectToField: "referrerId", // sponcer id for fetching
-        maxDepth: Number.MAX_VALUE,
-        depthField: "level",
-        as: "children",
-      },
-    },
-    { $unwind: "$children" },
-    { $group: { _id: null, count: { $sum: 1 } } },
-  ]);
-  console.log(total, "ttt");
-}
 
 // const updteschema=async()=>{
 //   await registration.updateMany(
@@ -759,150 +737,6 @@ async function getReward(ratio, token) {
   }
 }
 
-async function withdrawIncome(req, res) {
-  try {
-    const { wallet_address, plan, amount, withdrawtype, txHash } = req.body;
-    if (amount < 1e19) {
-      return res
-        .status(200)
-        .json({ status: false, message: "Minimum Withdrawal is $10" });
-    }
-    var token = "WYZ-stUSDT";
-    //var token = "bUSDT-stUSDT";
-    var ratio = 0;
-    if (plan == 1) {
-      ratio = 10;
-    } else if (plan == 2) {
-      ratio = 20;
-    } else if (plan == 3) {
-      ratio = 30;
-    } else if (plan == 4) {
-      ratio = 40;
-    } else if (plan == 5) {
-      ratio = 50;
-    } else if (plan == 6) {
-      ratio = 15;
-      token = "sUSDT-stUSDT";
-    } else if (plan == 7) {
-      ratio = 20;
-      token = "sUSDT-stUSDT";
-    } else if (plan == 8) {
-      ratio = 25;
-      token = "sUSDT-stUSDT";
-    }
-    const isstake = await stake2.findOne({
-      txHash: txHash,
-      user: wallet_address,
-      ratio: ratio,
-      token: token,
-    });
-    if (!isstake) {
-      return res
-        .status(200)
-        .json({ status: false, message: "No Staking Found" });
-    }
-    if (withdrawtype == "roi") {
-      const currentTime = new Date();
-      if (
-        currentTime > isstake.withdraw_stdate &&
-        currentTime < isstake.withdraw_endate
-      ) {
-        const chkBal = await stakeRegister.findOne({
-          user: wallet_address,
-          wallet_balance: { $gte: amount },
-        });
-        if (chkBal) {
-          const currentDate = new Date();
-          currentDate.setHours(0, 0, 0, 0);
-          const nextTimestrt = new Date(
-            currentDate.getTime() + 30 * 24 * 60 * 60 * 1000
-          );
-          const timestampstart = nextTimestrt.getTime();
-
-          const currentDate2 = new Date();
-          currentDate2.setHours(23, 59, 59, 999);
-          const nextTimeend = new Date(
-            currentDate2.getTime() + 30 * 24 * 60 * 60 * 1000
-          );
-          const timestampend = nextTimeend.getTime();
-          const hchh = await stakeRegister.updateOne(
-            { user: wallet_address, txHash: txHash },
-            {
-              $inc: {
-                wallet_balance: -amount,
-              },
-              // $set: {
-              //   withdraw_stdate: timestampstart,
-              //   withdraw_endate: timestampend
-              // }
-            }
-          );
-
-          if (hchh.modifiedCount > 0) {
-            return res
-              .status(200)
-              .json({ status: true, message: "Withdraw Successfull" });
-          }
-        }
-      } else {
-        return res
-          .status(200)
-          .json({ status: false, message: "You Cannot Withdraw" });
-      }
-    } else if (withdrawtype == "referral") {
-      const currentTime = new Date();
-      if (
-        currentTime > isstake.withdrawref_stdate &&
-        currentTime < isstake.withdrawref_endate
-      ) {
-        const chkBal = await stake2.findOne({
-          txHash: txHash,
-          user: wallet_address,
-          wallet_referral: { $gte: amount },
-        });
-        if (chkBal) {
-          const currentDate = new Date();
-          currentDate.setHours(0, 0, 0, 0);
-          const nextTimestrt = new Date(
-            currentDate.getTime() + 30 * 24 * 60 * 60 * 1000
-          );
-          const timestampstart = nextTimestrt.getTime();
-
-          const currentDate2 = new Date();
-          currentDate2.setHours(23, 59, 59, 999);
-          const nextTimeend = new Date(
-            currentDate2.getTime() + 30 * 24 * 60 * 60 * 1000
-          );
-          const timestampend = nextTimeend.getTime();
-          const hchh = await stake2.updateOne(
-            { user: wallet_address, txHash: txHash },
-            {
-              $inc: {
-                wallet_balance: -amount,
-              },
-              // $set: {
-              //   withdrawref_stdate: timestampstart,
-              //   withdrawref_endate: timestampend
-              // }
-            }
-          );
-
-          if (hchh.modifiedCount > 0) {
-            return res
-              .status(200)
-              .json({ status: true, message: "Withdraw Successfull" });
-          }
-        }
-      } else {
-        return res
-          .status(200)
-          .json({ status: false, message: "You Cannot Withdraw" });
-      }
-    }
-  } catch (error) {
-    console.log(error);
-  }
-}
 
 async function levelPercent(i) {
   if (i == 1) {

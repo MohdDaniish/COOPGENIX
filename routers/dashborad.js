@@ -1,8 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const registration = require("../model/registration");
-
-const stake2 = require("../model/stake");
 const moment = require("moment-timezone");
 const WithdrawalModel = require("../model/withdraw");
 const { verifyToken } = require("../Middleware/jwtToken");

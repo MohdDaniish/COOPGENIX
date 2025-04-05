@@ -4,7 +4,6 @@ const moment = require("moment-timezone");
 const mongoose = require("mongoose");
 const registration = require("./model/registration");
 const { getAllUsers } = require("./test");
-const stake2 = require("./model/stake");
 const withdraw = require("./model/withdraw");
 const withdraws = require("./model/withdraw");
 const crypto = require('crypto');
