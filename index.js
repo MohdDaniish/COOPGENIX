@@ -496,7 +496,7 @@ async function listEvent() {
     latestBlock > lastSyncBlock + 1000 ? lastSyncBlock + 1000 : latestBlock;
   //console.log(lastSyncBlock, toBlock);
   let events = await getEventReciept(lastSyncBlock, toBlock);
-  console.log("events", events.length);
+  // console.log("events", events.length);
 
   await processEvents(events);
   await updateBlock(toBlock);
