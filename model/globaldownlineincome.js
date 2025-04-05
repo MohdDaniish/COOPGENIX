@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const globalincomeSchema = new Schema({
+const globaldownlineSchema = new Schema({
     sender: {
         type: String,
         required: true
@@ -31,11 +31,11 @@ const globalincomeSchema = new Schema({
     timestamp: { type: Number, required: true },
 });
 
-globalincomeSchema.index(
+globaldownlineSchema.index(
     { sender: 1, receiver : 1,amount :1, level : 1, txHash: 1 },
     { unique: true }
   );
 
-const globalincome = mongoose.model('globalincome', globalincomeSchema);
+const globaldownline = mongoose.model('globaldownlineincome', globaldownlineSchema);
 
-module.exports = globalincome;
+module.exports = globaldownline;

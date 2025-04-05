@@ -24,8 +24,11 @@ const SlotPurchased = require("./model/packagebuy");
 const WithdrawUNW6 = require("./model/withdrawUNW6");
 const SponsorIncome = require("./model/sponsorincome");
 const upgrade = require("./model/upgrade");
-const globalincome = require("./model/globalincome");
+const globalincome = require("./model/globaldownlineincome");
 const claimpromise = require("./model/claimpromisereward");
+const poolexpiry = require("./model/poolexpiry");
+const globaldownline = require("./model/globaldownlineincome");
+const globalupline = require("./model/globaluplineincome");
 
 app.use(express.json());
 
@@ -68,7 +71,7 @@ const web3 = new Web3(
 
 const ABI = [{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"ClaimedPromiseReward","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"sender","type":"address"},{"indexed":true,"internalType":"address","name":"receiver","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"level","type":"uint256"}],"name":"GlobalIncome","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":true,"internalType":"address","name":"referrer","type":"address"},{"indexed":false,"internalType":"uint8","name":"packageId","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"poolId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"place","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"cycle","type":"uint256"}],"name":"NewUserPlace","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint8","name":"packageId","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"usdAmt","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"polAmt","type":"uint256"}],"name":"PackageBuy","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint8","name":"packageId","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"reinvest","type":"uint256"}],"name":"ReEntry","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":true,"internalType":"address","name":"referrer","type":"address"},{"indexed":false,"internalType":"uint256","name":"userId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"referrerId","type":"uint256"}],"name":"Registration","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"sender","type":"address"},{"indexed":true,"internalType":"address","name":"receiver","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"}],"name":"SponserIncome","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"}],"name":"StopedPromiseReward","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":true,"internalType":"address","name":"referrer","type":"address"},{"indexed":false,"internalType":"uint8","name":"_packageId","type":"uint8"},{"indexed":false,"internalType":"uint8","name":"_poolId","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"cycle","type":"uint256"}],"name":"Upgrade","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"sender","type":"address"},{"indexed":true,"internalType":"address","name":"receiver","type":"address"},{"indexed":false,"internalType":"uint8","name":"packageId","type":"uint8"},{"indexed":false,"internalType":"uint8","name":"poolId","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"reinvestCount","type":"uint256"}],"name":"UserIncome","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"user","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"netUsdAmt","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"netPolAmt","type":"uint256"}],"name":"Withdraw","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"onOwnershipTransferred","type":"event"},{"inputs":[],"name":"LAST_MATRIX","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PROMISE_DAILY_DIVIDER","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"PROMISE_DAILY_SHARE","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"TIME_STEP","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"aggregator","outputs":[{"internalType":"contract AggregatorV3Interface","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint8","name":"packageId","type":"uint8"}],"name":"buyMatrix","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint8","name":"_packageId","type":"uint8"},{"internalType":"uint8","name":"_poolId","type":"uint8"}],"name":"findReferrer","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"getPrice","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"_usdAmt","type":"uint256"}],"name":"getTotalPOLCoin","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"idToAddress","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_owner","type":"address"},{"internalType":"address","name":"_operator","type":"address"}],"name":"initialize","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_user","type":"address"}],"name":"isUserExists","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_referrer","type":"address"}],"name":"joinPlan","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"lastUserId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"}],"name":"matrixPackage","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"operator","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_user","type":"address"}],"name":"promiseReward","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_operator","type":"address"}],"name":"setOperatorWallet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"users","outputs":[{"internalType":"uint256","name":"id","type":"uint256"},{"internalType":"address","name":"referrer","type":"address"},{"internalType":"uint256","name":"avlReward","type":"uint256"},{"internalType":"uint256","name":"partnersCount","type":"uint256"},{"components":[{"internalType":"uint256","name":"blockReward","type":"uint256"},{"internalType":"uint256","name":"globalBonus","type":"uint256"},{"internalType":"uint256","name":"directReferralReward","type":"uint256"},{"internalType":"uint256","name":"promiseReward","type":"uint256"},{"internalType":"uint256","name":"totalReward","type":"uint256"}],"internalType":"struct CoopGenix.Income","name":"income","type":"tuple"},{"components":[{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"uint256","name":"startTime","type":"uint256"},{"internalType":"uint256","name":"checkpoint","type":"uint256"},{"internalType":"uint256","name":"endTime","type":"uint256"}],"internalType":"struct CoopGenix.PromiseStake","name":"promiseStake","type":"tuple"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"_amount","type":"uint256"}],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint8","name":"","type":"uint8"},{"internalType":"uint8","name":"","type":"uint8"}],"name":"xdpCurrentvId","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint8","name":"","type":"uint8"},{"internalType":"uint8","name":"","type":"uint8"}],"name":"xdpIndex","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"","type":"uint256"},{"internalType":"uint8","name":"","type":"uint8"},{"internalType":"uint256","name":"","type":"uint256"}],"name":"xdpvId_number","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"}]
 
-const contract = new web3.eth.Contract(ABI, process.env.MAIN_CONTRACT);
+let contract = new web3.eth.Contract(ABI, process.env.MAIN_CONTRACT);
 
 async function getLastSyncBlock() {
   let { lastSyncBlock } = await config2.findOne();
@@ -201,6 +204,19 @@ async function processEvents(events) {
       } catch (e) {
         console.log("Error (SponserReward Event) :", e.message);
       }
+    } else if (event == "PendingPoolExpiry") {
+      try {
+        await poolexpiry.create({
+          user: returnValues.user,
+          packageId: returnValues.packageId,
+          expiry: returnValues.expiry,
+          txHash: transactionHash,
+          block: blockNumber,
+          timestamp: timestamp,
+        });
+      } catch (e) {
+        console.log("Error (SponserReward Event) :", e.message);
+      }
     } else if (event == "ReEntry") {
       try {
         
@@ -247,10 +263,10 @@ async function processEvents(events) {
       } catch (e) {
         console.log("Error (Withdraw Event) :", e.message);
       }
-    } else if (event == "GlobalIncome") {
+    } else if (event == "GlobalDownlineIncome") {
       try {
         
-          const iswit = await globalincome.create({  
+          const iswit = await globaldownline.create({  
           sender: returnValues.sender,
           receiver: returnValues.receiver,
           amount : returnValues.amount,
@@ -261,7 +277,24 @@ async function processEvents(events) {
         });
 
       } catch (e) {
-        console.log("Error (GlobalIncome Event) :", e.message);
+        console.log("Error (GlobalDownlineIncome Event) :", e.message);
+      }
+    } else if (event == "GlobalUplineIncome") {
+      try {
+        
+          const iswit = await globalupline.create({  
+          sender: returnValues.sender,
+          receiver: returnValues.receiver,
+          amount : returnValues.amount,
+          packageId : returnValues.packageId,
+          level : returnValues.level,
+          txHash: transactionHash,
+          block: blockNumber,
+          timestamp: timestamp,
+        });
+
+      } catch (e) {
+        console.log("Error (GlobalUplineIncome Event) :", e.message);
       }
     } else if (event == "ClaimedPromiseReward") {
       try {
@@ -459,6 +492,7 @@ async function updaterank() {
 }
 
 async function listEvent() {
+  try{
   let lastSyncBlock = await getLastSyncBlock();
   let latestBlock = await web3.eth.getBlockNumber();
   let toBlock =
@@ -474,6 +508,31 @@ async function listEvent() {
   } else {
     setTimeout(listEvent, 5000);
   }
+} catch(error){
+  contract = new web3.eth.Contract(ABI, process.env.MAIN_CONTRACT);
+  listEvent();
+}
+}
+
+const rpcUrls = [
+  'https://opbnb-testnet-rpc.publicnode.com',
+  process.env.RPC_URL, // fallback to env variable
+];
+
+async function getWorkingRpc() {
+  for (const url of rpcUrls) {
+    try {
+      console.log(`Trying RPC: ${url}`);
+      const tempWeb3 = new Web3(new Web3.providers.HttpProvider(url));
+      // Try to get the latest block to test the connection
+      await tempWeb3.eth.getBlockNumber();
+      console.log(`✅ Connected to ${url}`);
+      return tempWeb3;
+    } catch (error) {
+      console.error(`❌ Failed to connect to ${url}:`, error.message);
+    }
+  }
+  throw new Error('All RPC URLs failed');
 }
 
 async function getUserPlanUpdate() {
