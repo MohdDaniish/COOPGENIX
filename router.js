@@ -4393,6 +4393,7 @@ router.get('/user-info', async (req, res) => {
                   rank : 1,
                   ranknumber : 1,
                   invest_amount : 1,
+                  directCount : 1,
                   referrerUserId: { $arrayElemAt: ['$referrerDetails.user', 0] }
               }
           }
