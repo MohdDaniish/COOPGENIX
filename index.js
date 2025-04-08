@@ -150,8 +150,7 @@ async function processEvents(events) {
           cycle: returnValues.cycle,
           txHash: transactionHash,
           block: blockNumber,
-          timestamp: timestamp,
-          rentricount : rentricount
+          timestamp: timestamp
         });
 
       } catch (e) {

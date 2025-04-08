@@ -26,10 +26,6 @@ const newuserplaceSchema = new Schema({
     type: Number,
     default : 0
   },
-  rentricount: {
-    type: Number,
-    default : 0
-  },
   createdAt: {
     type: Date,
     default: Date.now
