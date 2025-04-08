@@ -250,6 +250,7 @@ async function processEvents(events) {
         
           const iswit = await packagebuy.create({  
           user: returnValues.user,
+          packageId: returnValues.packageId,
           usdAmt: returnValues.usdAmt,
           polAmt : returnValues.polAmt,
           txHash: transactionHash,
