@@ -4020,16 +4020,16 @@ router.get('/uw', async (req, res) => {
 });
 
 
-router.get('/uwn1', async (req, res) => {
+router.get('/uwn', async (req, res) => {
   try {
-    const { user, slot, cycle } = req.query;
+    const { user, packageId, cycle } = req.query;
 
    
     if (!user) {
       return res.status(400).json({ error: 'user is required' });
     }
     let currentcycle = 0;
-    const matrixreentry = await reEntry.countDocuments({ user: user, martixId : 2, slotId : slot });
+    const matrixreentry = await reEntry.countDocuments({ user: user, packageId : packageId });
 
     if(cycle){
       currentcycle = cycle
@@ -4037,7 +4037,7 @@ router.get('/uwn1', async (req, res) => {
       currentcycle = matrixreentry
     }
 
-    const matrixstruct = await newuserplace.find({ referrer: user, matrix : 2, slotId : slot, cycle : currentcycle });
+    const matrixstruct = await newuserplace.find({ referrer: user, packageId : packageId, cycle : currentcycle });
 
     const mergedRecords = [];
     // Loop through each record in matrixstruct
