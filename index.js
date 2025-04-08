@@ -26,6 +26,7 @@ const claimpromise = require("./model/claimpromisereward");
 const poolexpiry = require("./model/poolexpiry");
 const globaldownline = require("./model/globaldownlineincome");
 const globalupline = require("./model/globaluplineincome");
+const packagebuy = require("./model/packagebuy");
 
 app.use(express.json());
 
@@ -150,7 +151,7 @@ async function processEvents(events) {
           txHash: transactionHash,
           block: blockNumber,
           timestamp: timestamp,
-          reentry : rentricount
+          rentricount : rentricount
         });
 
       } catch (e) {
@@ -247,11 +248,10 @@ async function processEvents(events) {
     } else if (event == "PackageBuy") {
       try {
         
-          const iswit = await withdraw.create({  
+          const iswit = await packagebuy.create({  
           user: returnValues.user,
-          amount: returnValues.amount,
-          netUsdAmt : returnValues.netUsdAmt,
-          netPolAmt : returnValues.netPolAmt,
+          usdAmt: returnValues.usdAmt,
+          polAmt : returnValues.polAmt,
           txHash: transactionHash,
           block: blockNumber,
           timestamp: timestamp,
