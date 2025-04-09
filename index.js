@@ -27,6 +27,7 @@ const poolexpiry = require("./model/poolexpiry");
 const globaldownline = require("./model/globaldownlineincome");
 const globalupline = require("./model/globaluplineincome");
 const packagebuy = require("./model/packagebuy");
+const stoppromise = require("./model/stoppromise");
 
 app.use(express.json());
 
@@ -178,8 +179,8 @@ async function processEvents(events) {
          const isth = await upgrade.create({
           user: returnValues.user,
           referrer: returnValues.referrer,
-          poolId: returnValues._poolId,
-          packageId : returnValues._packageId,
+          poolId: returnValues.poolId,
+          packageId : returnValues.packageId,
           cycle : returnValues.cycle,
           txHash: transactionHash,
           block: blockNumber,
@@ -310,10 +311,11 @@ async function processEvents(events) {
     } else if (event == "StopedPromiseReward") {
       try {
         
-          const iswit = await claimpromise.create({  
+          const iswit = await stoppromise.create({  
           user: returnValues.user,
+          txHash: transactionHash,
           block: blockNumber,
-          timestamp: timestamp,
+          timestamp: timestamp
         });
 
       } catch (e) {
