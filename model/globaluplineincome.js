@@ -7,7 +7,7 @@ const globaluplineSchema = new Schema({
         required: true
     },
     receiver: {
-        type: Number,
+        type: String,
         required: true
     },
     amount: {
