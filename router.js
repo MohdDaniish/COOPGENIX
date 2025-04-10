@@ -4573,8 +4573,6 @@ router.get('/user-info', async (req, res) => {
           userDetails: userDetails[0],
           directteam : directMembers,
           allteam : teamcount,
-          //directincome : directiiincome/1e18,
-          //levelIncome : leviinc/1e18,
           totalincome : totalincome/1e18 + sponsor_income + globalupline/1e18 + globaldownline/1e18,
           promise_reward : promise_reward,
           earning_goal : earningGoal,
