@@ -4550,6 +4550,25 @@ router.get('/user-info', async (req, res) => {
 
       let reward_wal = globalupline/1e18 + globaldownline/1e18 + sponsor_income + totalincome/1e18;
 
+      //  reward_goal 
+
+      const directs = await registration.find({ referrer: userId }).select("user").lean();
+
+          const directUserIds = directs.map(d => d.user);
+
+          // Step 2: Sum usdAmt from packagebuy for these users
+          const result = await packagebuy.aggregate([
+            { $match: { user: { $in: directUserIds } } },
+            {
+              $group: {
+                _id: null,
+                totalUsdAmt: { $sum: "$usdAmt" }
+              }
+            }
+          ]);
+
+          const rewardGoal = result[0]?.totalUsdAmt || 0;
+
       res.status(200).send({
           userDetails: userDetails[0],
           directteam : directMembers,
@@ -4560,6 +4579,7 @@ router.get('/user-info', async (req, res) => {
           promise_reward : promise_reward,
           earning_goal : earningGoal,
           spot_wallet : spot_wallet/1e18,
+          reward_goal : rewardGoal/1e18,
           // todayBonus : todayinc/1e18 + sponsor_income,
           sponsor_income : sponsor_income
       });
