@@ -479,6 +479,9 @@ const newuserplace = require("./model/newuserplace");
 const reEntry = require("./model/reEntry");
 const UserIncome = require("./model/userIncome");
 const SponsorIncome = require("./model/sponsorincome");
+const packagebuy = require("./model/packagebuy");
+const globalupline = require("./model/globaluplineincome");
+const globaldownline = require("./model/globaldownlineincome");
 router.get("/tvl", async (req, res) => {
   try {
     const plan = req.query.plan;
@@ -4474,23 +4477,90 @@ router.get('/user-info', async (req, res) => {
       let sponsor_income = sponsrew.length > 0 ? sponsrew[0].totalIncome : 0;
       sponsor_income = sponsor_income/1e18;
 
+      // promise reward cal
+      const promise_rew = await packagebuy.aggregate([
+        {
+          $match: { user: userId } // Match the specific receiver
+        },
+        {
+          $group: {
+            _id: null,
+            totalIncome: { $sum: "$usdAmt" } // Sum the income field
+          }
+        }
+      ]);
+
+      let promise_reward = promise_rew.length > 0 ? promise_rew[0].totalIncome : 0;
+      // promise reward cal
+      promise_reward = (promise_reward/1e18) * 2;
+
+      // earning goal 
+
+      let earningGoal = (promise_reward/1e18) * 5;
+
+      // spot_wallet (userincome poolid 4)
+
+      const spot_wall = await UserIncome.aggregate([
+        {
+          $match: { receiver: userId, poolId : 4 } // Match the specific receiver
+        },
+        {
+          $group: {
+            _id: null,
+            totalIncome: { $sum: "$amount" } // Sum the income field
+          }
+        }
+      ]);
+
+      const spot_wallet = spot_wall.length > 0 ? spot_wall[0].totalIncome : 0;
+
+      // globalupline income
+
+      const global_up = await globalupline.aggregate([
+        {
+          $match: { receiver: userId } // Match the specific receiver
+        },
+        {
+          $group: {
+            _id: null,
+            totalIncome: { $sum: "$amount" } // Sum the income field
+          }
+        }
+      ]);
+
+      const globalupline = global_up.length > 0 ? global_up[0].totalIncome : 0;
+
+       // globaldownline income
+
+       const global_down = await globaldownline.aggregate([
+        {
+          $match: { receiver: userId } // Match the specific receiver
+        },
+        {
+          $group: {
+            _id: null,
+            totalIncome: { $sum: "$amount" } // Sum the income field
+          }
+        }
+      ]);
+
+      const globaldownline = global_down.length > 0 ? global_down[0].totalIncome : 0;
+
+      // reward wallet
+
+      let reward_wal = globalupline/1e18 + globaldownline/1e18 + sponsor_income + totalincome/1e18;
+
       res.status(200).send({
           userDetails: userDetails[0],
           directteam : directMembers,
           allteam : teamcount,
           //directincome : directiiincome/1e18,
           //levelIncome : leviinc/1e18,
-          totalincome : totalincome/1e18 + sponsor_income,
+          totalincome : totalincome/1e18 + sponsor_income + globalupline/1e18 + globaldownline/1e18,
+          promise_reward : promise_reward,
+          earning_goal : earningGoal,
+          spot_wallet : spot_wallet/1e18,
           // todayBonus : todayinc/1e18 + sponsor_income,
-          // uw_total_income : first_matrix_inc/1e18,
-          // uwn1_total_income : second_matrix_inc/1e18,
-          // uwn2_total_income : third_matrix_inc/1e18,
-          // uwn3_total_income : four_matrix_inc/1e18,
-          // uwn4_total_income : five_matrix_inc/1e18,
-          // uwn5_total_income : six_matrix_inc/1e18,
-          // uwn6_total_income : seven_matrix_inc/1e18,
-          // directincomeun5 : directiiincomeun5/1e18,
-          // levelincomeun5 : leviinc5/1e18,
           sponsor_income : sponsor_income
       });
   } catch (error) {
