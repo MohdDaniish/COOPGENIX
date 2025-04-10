@@ -4589,7 +4589,7 @@ router.get('/user-info', async (req, res) => {
           earning_goal : earningGoal,
           spot_wallet : spot_wallet/1e18,
           reward_goal: rewardGoal > 0 ? (rewardGoal * 0.57) / 1e18 : 0,
-          direct_volume : rewardGoal,
+          direct_volume : rewardGoal > 0 ? rewardGoal / 1e18 : 0,
           // todayBonus : todayinc/1e18 + sponsor_income,
           sponsor_income : sponsor_income,
           global_upline_downline : userList
