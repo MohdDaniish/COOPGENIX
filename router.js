@@ -4490,13 +4490,19 @@ router.get('/user-info', async (req, res) => {
         }
       ]);
 
-      let promise_reward = promise_rew.length > 0 ? promise_rew[0].totalIncome : 0;
-      // promise reward cal
-      promise_reward = (promise_reward/1e18) * 2;
+      let promise_rewar = promise_rew.length > 0 ? promise_rew[0].totalIncome : 0;
 
+      let earningGoal = 0;
+      let promise_reward = 0;
+      // promise reward cal
+      
+      if(promise_rewar>0){
+      promise_reward = (promise_rewar/1e18) * 2;
+      console.log("promise_reward ",promise_reward)
       // earning goal 
 
-      let earningGoal = (promise_reward/1e18) * 5;
+      earningGoal = (promise_rewar/1e18) * 5;
+      }
 
       // spot_wallet (userincome poolid 4)
 
@@ -4528,7 +4534,7 @@ router.get('/user-info', async (req, res) => {
         }
       ]);
 
-      const globalupline = global_up.length > 0 ? global_up[0].totalIncome : 0;
+      const globaluplineinc = global_up.length > 0 ? global_up[0].totalIncome : 0;
 
        // globaldownline income
 
@@ -4544,11 +4550,11 @@ router.get('/user-info', async (req, res) => {
         }
       ]);
 
-      const globaldownline = global_down.length > 0 ? global_down[0].totalIncome : 0;
+      const globaldownlineinc = global_down.length > 0 ? global_down[0].totalIncome : 0;
 
       // reward wallet
 
-      let reward_wal = globalupline/1e18 + globaldownline/1e18 + sponsor_income + totalincome/1e18;
+      let reward_wal = globaluplineinc/1e18 + globaldownlineinc/1e18 + sponsor_income + totalincome/1e18;
 
       //  reward_goal 
 
@@ -4569,17 +4575,23 @@ router.get('/user-info', async (req, res) => {
 
           const rewardGoal = result[0]?.totalUsdAmt || 0;
 
+          // global downline upline list
+
+          const userList = await getSurroundingUsersWithAmounts(userDetails[0].uId, userId);
+          //console.log(userList);
+
       res.status(200).send({
           userDetails: userDetails[0],
           directteam : directMembers,
           allteam : teamcount,
-          totalincome : totalincome/1e18 + sponsor_income + globalupline/1e18 + globaldownline/1e18,
+          totalincome : totalincome/1e18 + sponsor_income + globaluplineinc/1e18 + globaldownlineinc/1e18,
           promise_reward : promise_reward,
           earning_goal : earningGoal,
           spot_wallet : spot_wallet/1e18,
           reward_goal : rewardGoal/1e18,
           // todayBonus : todayinc/1e18 + sponsor_income,
-          sponsor_income : sponsor_income
+          sponsor_income : sponsor_income,
+          global_upline_downline : userList
       });
   } catch (error) {
       console.error('Error fetching user details:', error);
@@ -5177,6 +5189,86 @@ router.get('/seedetail', async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+const getSurroundingUsersWithAmounts = async (myUid, myId) => {
+  // 1. Get my own registration record
+  const myRecord = await registration.findOne({ uId: myUid }).lean();
+  if (!myRecord) throw new Error("User not found");
+
+  // 2. Find 20 users before me and 20 after me based on uId
+  const usersBefore = await registration.find({ uId: { $lt: myUid } })
+    .sort({ uId: -1 })
+    .limit(20)
+    .lean();
+
+  const usersAfter = await registration.find({ uId: { $gt: myUid } })
+    .sort({ uId: 1 })
+    .limit(20)
+    .lean();
+
+  // Extract user IDs
+  const beforeUserIds = usersBefore.map(user => user.user);
+  const afterUserIds = usersAfter.map(user => user.user);
+
+  // 3. Find globaldownline records where sender in before users and receiver = me
+  const downlineData = await globaldownline.aggregate([
+    {
+      $match: {
+        sender: { $in: beforeUserIds },
+        receiver: myId
+      }
+    },
+    {
+      $group: {
+        _id: "$sender",
+        totalAmount: { $sum: "$amount" }
+      }
+    }
+  ]);
+
+  // 4. Find globalupline records where sender in after users and receiver = me
+  const uplineData = await globalupline.aggregate([
+    {
+      $match: {
+        sender: { $in: afterUserIds },
+        receiver: myId
+      }
+    },
+    {
+      $group: {
+        _id: "$sender",
+        totalAmount: { $sum: "$amount" }
+      }
+    }
+  ]);
+
+  // Convert to lookup maps
+  const downlineMap = Object.fromEntries(downlineData.map(d => [d._id, d.totalAmount]));
+  const uplineMap = Object.fromEntries(uplineData.map(d => [d._id, d.totalAmount]));
+
+  // Build final list
+  const beforeWithAmounts = usersBefore.map(user => ({
+    uId: user.uId,
+    user: user.user,
+    userId: user.userId,
+    amount: downlineMap[user.user] || 0
+  }));
+
+  const afterWithAmounts = usersAfter.map(user => ({
+    uId: user.uId,
+    user: user.user,
+    userId: user.userId,
+    amount: uplineMap[user.user] || 0
+  }));
+
+  const result = [
+    ...beforeWithAmounts.reverse(), // older first
+    {uId : myRecord.uId, user: myRecord.user, userId :  myRecord.userId, amount: 0 }, // self in center
+    ...afterWithAmounts
+  ];
+
+  return result;
+};
 
   
   module.exports = router;
