@@ -4573,7 +4573,7 @@ router.get('/user-info', async (req, res) => {
             }
           ]);
 
-          const rewardGoal = result[0]?.totalUsdAmt || 0;
+          let rewardGoal = result[0]?.totalUsdAmt || 0;
 
           // global downline upline list
 
@@ -4588,7 +4588,8 @@ router.get('/user-info', async (req, res) => {
           promise_reward : promise_reward,
           earning_goal : earningGoal,
           spot_wallet : spot_wallet/1e18,
-          reward_goal : rewardGoal/1e18,
+          reward_goal: rewardGoal > 0 ? (rewardGoal * 0.57) / 1e18 : 0,
+          direct_volume : rewardGoal,
           // todayBonus : todayinc/1e18 + sponsor_income,
           sponsor_income : sponsor_income,
           global_upline_downline : userList
