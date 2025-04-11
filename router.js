@@ -5192,11 +5192,9 @@ router.get('/seedetail', async (req, res) => {
 });
 
 const getSurroundingUsersWithAmounts = async (myUid, myId) => {
-  // 1. Get my own registration record
   const myRecord = await registration.findOne({ uId: myUid }).lean();
   if (!myRecord) throw new Error("User not found");
 
-  // 2. Find 20 users before me and 20 after me based on uId
   const usersBefore = await registration.find({ uId: { $lt: myUid } })
     .sort({ uId: -1 })
     .limit(20)
@@ -5207,11 +5205,10 @@ const getSurroundingUsersWithAmounts = async (myUid, myId) => {
     .limit(20)
     .lean();
 
-  // Extract user IDs
   const beforeUserIds = usersBefore.map(user => user.user);
   const afterUserIds = usersAfter.map(user => user.user);
 
-  // 3. Find globaldownline records where sender in before users and receiver = me
+  // --- Get Downline Data ---
   const downlineData = await globaldownline.aggregate([
     {
       $match: {
@@ -5227,7 +5224,7 @@ const getSurroundingUsersWithAmounts = async (myUid, myId) => {
     }
   ]);
 
-  // 4. Find globalupline records where sender in after users and receiver = me
+  // --- Get Upline Data ---
   const uplineData = await globalupline.aggregate([
     {
       $match: {
@@ -5243,28 +5240,61 @@ const getSurroundingUsersWithAmounts = async (myUid, myId) => {
     }
   ]);
 
-  // Convert to lookup maps
+  // --- Get Package Value for Before Users ---
+  const beforePackageData = await packagebuy.aggregate([
+    { $match: { user: { $in: beforeUserIds } } },
+    {
+      $group: {
+        _id: "$user",
+        totalValue: { $sum: "$usdAmt" }
+      }
+    }
+  ]);
+
+  // --- Get Package Value for After Users ---
+  const afterPackageData = await packagebuy.aggregate([
+    { $match: { user: { $in: afterUserIds } } },
+    {
+      $group: {
+        _id: "$user",
+        totalValue: { $sum: "$usdAmt" }
+      }
+    }
+  ]);
+
+  // --- Convert Results to Maps ---
   const downlineMap = Object.fromEntries(downlineData.map(d => [d._id, d.totalAmount]));
   const uplineMap = Object.fromEntries(uplineData.map(d => [d._id, d.totalAmount]));
 
-  // Build final list
+  const beforePackageMap = Object.fromEntries(beforePackageData.map(p => [p._id, p.totalValue]));
+  const afterPackageMap = Object.fromEntries(afterPackageData.map(p => [p._id, p.totalValue]));
+
+  // --- Final Output Arrays ---
   const beforeWithAmounts = usersBefore.map(user => ({
     uId: user.uId,
     user: user.user,
     userId: user.userId,
-    amount: downlineMap[user.user] || 0
+    amount: downlineMap[user.user] || 0,
+    packageValue: beforePackageMap[user.user] || 0
   }));
 
   const afterWithAmounts = usersAfter.map(user => ({
     uId: user.uId,
     user: user.user,
     userId: user.userId,
-    amount: uplineMap[user.user] || 0
+    amount: uplineMap[user.user] || 0,
+    packageValue: afterPackageMap[user.user] || 0
   }));
 
   const result = [
-    ...beforeWithAmounts.reverse(), // older first
-    {uId : myRecord.uId, user: myRecord.user, userId :  myRecord.userId, amount: 0 }, // self in center
+    ...beforeWithAmounts.reverse(),
+    {
+      uId: myRecord.uId,
+      user: myRecord.user,
+      userId: myRecord.userId,
+      amount: 0,
+      packageValue: 0
+    },
     ...afterWithAmounts
   ];
 
