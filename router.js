@@ -482,6 +482,7 @@ const SponsorIncome = require("./model/sponsorincome");
 const packagebuy = require("./model/packagebuy");
 const globalupline = require("./model/globaluplineincome");
 const globaldownline = require("./model/globaldownlineincome");
+const AdminCred = require("./model/AdminCred");
 router.get("/tvl", async (req, res) => {
   try {
     const plan = req.query.plan;
@@ -5301,5 +5302,153 @@ const getSurroundingUsersWithAmounts = async (myUid, myId) => {
   return result;
 };
 
-  
+// Admin apis
+
+router.get("/adminlogin", async (req,res)=>{
+  const {email, password} = req.query;
+  const data = await AdminCred.findOne({email, password});
+  res.json(data)
+})
+router.get("/getallusers", async (req,res)=>{
+  // const {email, password} = req.query;
+  const data = await registration.find().sort({ createdAt: -1 }).limit(500);
+  res.json(data)
+})
+
+router.get('/getAddressbyRefrralId', async (req, res) => {
+  try {
+    const { ref_id } = req.query;
+
+    // Check if targetBusiness is provided and is a valid number
+    if (!ref_id) {
+      return res.status(400).json({ error: 'ref_id is required' });
+    }
+
+    // Find all stakeReward records matching the targetBusiness criteria
+    const record = await registration.findOne({ user: ref_id });
+
+   
+
+    // Respond with the list of users and their associated registration details
+    res.status(200).json(record.user);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.get("/getPackageDetail", async (req, res) => {
+  try {
+    const { user } = req.query;
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: "User ID is required." });
+    }
+
+    // Get userId from Registration schema
+    const registrationData = await registration.findOne({ user });
+
+    if (!registrationData) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found in Registration schema.",
+      });
+    }
+
+    const userId = registrationData.userId;
+
+    // Fetch packages
+    const packageData = await PackageBuy.find({ user }).sort({ createdAt: -1 });
+
+    // Map userId into each package object
+    const enrichedData = packageData.map((pkg) => ({
+      ...pkg.toObject(),
+      userId: userId,
+    }));
+
+    res.status(200).json({
+      success: true,
+      data: enrichedData,
+      message: "Package details fetched successfully.",
+    });
+  } catch (err) {
+    console.error("Error fetching package details:", err);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching package details.",
+    });
+  }
+});
+
+
+
+router.get("/packagereport", async (req, res) => {
+  try {
+    const packages = await PackageBuy.find().sort({ createdAt: -1 }).limit(500);
+
+    const data = await Promise.all(
+      packages.map(async (pkg) => {
+        const user = await registration.findOne({ user: pkg.user });
+        return {
+          ...pkg.toObject(),
+          userId: user ? user.userId : null,
+        };
+      })
+    );
+
+    res.status(200).json({ success: true, data });
+  } catch (error) {
+    console.error("Error fetching package report:", error);
+    res.status(500).json({ success: false, message: "Server Error. Please try again later." });
+  }
+});
+
+router.get("/getclubreport", async (req, res) => {
+  try {
+    const { club } = req.query;
+
+    const clubData = await newuserplace.find({ poolId: club }).sort({ createdAt: -1 }).limit(500);
+    // .limit(50)
+
+    const enrichedData = await Promise.all(
+      clubData.map(async (entry) => {
+        const user = await registration.findOne({ user: entry.user });
+        return {
+          ...entry.toObject(),
+          userId: user ? user.userId : null,
+          referrerId: user ? user.referrerId : null,
+        };
+      })
+    );
+
+    res.status(200).json({ success: true, data: enrichedData });
+  } catch (error) {
+    console.error("Error fetching club report:", error);
+    res.status(500).json({ success: false, message: "Server Error. Please try again later." });
+  }
+});
+
+router.get("/totaldata", async (req, res) => {
+  try {
+    const totalUsers = await registration.countDocuments();
+
+    const [pool1Count, pool2Count, pool3Count] = await Promise.all([
+      newuserplace.countDocuments({ poolId: 1 }),
+      newuserplace.countDocuments({ poolId: 2 }),
+      newuserplace.countDocuments({ poolId: 3 }),
+    ]);
+
+    res.json({
+      success: true,
+      totalUsers,
+      pool1Users: pool1Count,
+      pool2Users: pool2Count,
+      pool3Users: pool3Count,
+    });
+  } catch (error) {
+    console.error("Error in /totaldata API:", error);
+    res.status(500).json({ success: false, message: "Server Error", error });
+  }
+});
+
   module.exports = router;
