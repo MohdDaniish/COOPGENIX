@@ -4052,7 +4052,7 @@ router.get('/uwn', async (req, res) => {
       const userRecord = await registration.findOne({ user: record.user });
     
       // Get expiry from poolexpiry schema
-      const expiryRecord = await poolexpiry.findOne({ user: record.user });
+      const expiryRecord = await poolexpiry.findOne({ user: record.user, packageId : packageId });
     
       // If a matching user is found in registration, merge details
       if (userRecord) {
