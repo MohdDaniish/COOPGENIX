@@ -483,6 +483,7 @@ const packagebuy = require("./model/packagebuy");
 const globalupline = require("./model/globaluplineincome");
 const globaldownline = require("./model/globaldownlineincome");
 const AdminCred = require("./model/AdminCred");
+const poolexpiry = require("./model/poolexpiry");
 router.get("/tvl", async (req, res) => {
   try {
     const plan = req.query.plan;
@@ -4028,44 +4029,49 @@ router.get('/uwn', async (req, res) => {
   try {
     const { user, packageId, cycle } = req.query;
 
-   
     if (!user) {
       return res.status(400).json({ error: 'user is required' });
     }
+    
     let currentcycle = 0;
-    const matrixreentry = await reEntry.countDocuments({ user: user, packageId : packageId });
-
-    if(cycle){
-      currentcycle = cycle
+    const matrixreentry = await reEntry.countDocuments({ user: user, packageId: packageId });
+    
+    if (cycle) {
+      currentcycle = cycle;
     } else {
-      currentcycle = matrixreentry
+      currentcycle = matrixreentry;
     }
-
-    const matrixstruct = await newuserplace.find({ referrer: user, packageId : packageId, cycle : currentcycle });
-
+    
+    const matrixstruct = await newuserplace.find({ referrer: user, packageId: packageId, cycle: currentcycle });
+    
     const mergedRecords = [];
+    
     // Loop through each record in matrixstruct
     for (const record of matrixstruct) {
       // Find the corresponding user in the registration schema
       const userRecord = await registration.findOne({ user: record.user });
-      // If a matching user is found, merge the userId into the newuserplace record
+    
+      // Get expiry from poolexpiry schema
+      const expiryRecord = await poolexpiry.findOne({ user: record.user });
+    
+      // If a matching user is found in registration, merge details
       if (userRecord) {
         const mergedRecord = {
-          ...record.toObject(), // Convert Mongoose document to plain object
-          userId: userRecord.userId, // Add the userId from the registration schema
-          uId: userRecord.uId, // Add the userId from the registration schema
-          rId: userRecord.rId, // Add the userId from the registration schema
+          ...record.toObject(),
+          userId: userRecord.userId,
+          uId: userRecord.uId,
+          rId: userRecord.rId,
+          expiry: expiryRecord ? expiryRecord.expiry : 0 // Add expiry or 0 if not found
         };
         mergedRecords.push(mergedRecord);
       }
     }
-
-
+    
     // Respond with the list of users and their associated registration details
     res.status(200).json({
-      mergedRecords, 
-      reenty : matrixreentry
-      });
+      mergedRecords,
+      reenty: matrixreentry
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Server error' });
