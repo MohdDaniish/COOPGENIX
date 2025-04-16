@@ -4043,6 +4043,8 @@ router.get('/uwn', async (req, res) => {
     }
     
     const matrixstruct = await newuserplace.find({ referrer: user, packageId: packageId, cycle: currentcycle });
+
+    const expiryRecord = await poolexpiry.findOne({ user: user, packageId : packageId });
     
     const mergedRecords = [];
     
@@ -4052,7 +4054,7 @@ router.get('/uwn', async (req, res) => {
       const userRecord = await registration.findOne({ user: record.user });
     
       // Get expiry from poolexpiry schema
-      const expiryRecord = await poolexpiry.findOne({ user: record.user, packageId : packageId });
+      
     
       // If a matching user is found in registration, merge details
       if (userRecord) {
@@ -4060,8 +4062,8 @@ router.get('/uwn', async (req, res) => {
           ...record.toObject(),
           userId: userRecord.userId,
           uId: userRecord.uId,
-          rId: userRecord.rId,
-          expiry: expiryRecord ? expiryRecord.expiry : 0 // Add expiry or 0 if not found
+          rId: userRecord.rId
+          
         };
         mergedRecords.push(mergedRecord);
       }
@@ -4070,7 +4072,8 @@ router.get('/uwn', async (req, res) => {
     // Respond with the list of users and their associated registration details
     res.status(200).json({
       mergedRecords,
-      reenty: matrixreentry
+      reenty: matrixreentry,
+      expiry: expiryRecord ? expiryRecord.expiry : 0 // Add expiry or 0 if not found
     });
   } catch (error) {
     console.error(error);
