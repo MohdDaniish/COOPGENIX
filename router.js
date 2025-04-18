@@ -4036,7 +4036,7 @@ router.get('/uwn', async (req, res) => {
     
     let currentcycle = 0;
     const matrixreentry = await upgrade.findOne({ user: user, packageId: packageId }).sort({ cycle: -1 });;
-    
+    console.log("matrixreentry ",matrixreentry)
     if (cycle) {
       currentcycle = cycle;
     } else {
@@ -4073,7 +4073,7 @@ router.get('/uwn', async (req, res) => {
     // Respond with the list of users and their associated registration details
     res.status(200).json({
       mergedRecords,
-      reenty: matrixreentry,
+      reenty: matrixreentry.cycle,
       expiry: expiryRecord ? expiryRecord.expiry : 0 // Add expiry or 0 if not found
     });
   } catch (error) {
