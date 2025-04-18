@@ -4040,7 +4040,7 @@ router.get('/uwn', async (req, res) => {
     if (cycle) {
       currentcycle = cycle;
     } else {
-      currentcycle = matrixreentry.cycle;
+      currentcycle = matrixreentry?.cycle ?? 0;
     }
     
     const matrixstruct = await newuserplace.find({ referrer: user, packageId: packageId, cycle: currentcycle });
