@@ -4036,7 +4036,7 @@ router.get('/uwn', async (req, res) => {
     
     let currentcycle = 0;
     const matrixreentry = await upgrade.findOne({ user: user, packageId: packageId }).sort({ cycle: -1 });;
-    console.log("matrixreentry ",matrixreentry)
+    
     if (cycle) {
       currentcycle = cycle;
     } else {
