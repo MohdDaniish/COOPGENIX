@@ -4073,7 +4073,7 @@ router.get('/uwn', async (req, res) => {
     // Respond with the list of users and their associated registration details
     res.status(200).json({
       mergedRecords,
-      reenty: matrixreentry.cycle,
+      reenty: matrixreentry?.cycle ?? 0,
       expiry: expiryRecord ? expiryRecord.expiry : 0 // Add expiry or 0 if not found
     });
   } catch (error) {
