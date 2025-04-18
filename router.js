@@ -6,6 +6,7 @@ const registration = require("./model/registration");
 const { getAllUsers } = require("./test");
 const withdraw = require("./model/withdraw");
 const withdraws = require("./model/withdraw");
+const upgrade = require("./model/upgrade");
 const crypto = require('crypto');
 const Web3 = require("web3");
 require('dotenv').config();
@@ -4034,12 +4035,12 @@ router.get('/uwn', async (req, res) => {
     }
     
     let currentcycle = 0;
-    const matrixreentry = await reEntry.countDocuments({ user: user, packageId: packageId });
+    const matrixreentry = await upgrade.findOne({ user: user, packageId: packageId }).sort({ cycle: -1 });;
     
     if (cycle) {
       currentcycle = cycle;
     } else {
-      currentcycle = matrixreentry;
+      currentcycle = matrixreentry.cycle;
     }
     
     const matrixstruct = await newuserplace.find({ referrer: user, packageId: packageId, cycle: currentcycle });
