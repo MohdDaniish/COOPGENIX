@@ -23,7 +23,7 @@ const needtopurchaseSchema = new Schema({
     timestamp: { type: Number, required: true },
 });
 
-needtopurchase.index(
+needtopurchaseSchema.index(
     { user: 1, packageId: 1, txHash: 1 },
     { unique: true }
   );
