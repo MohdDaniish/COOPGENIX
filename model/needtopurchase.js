@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const Schema = mongoose.Schema;
 
-const poolexpirySchema = new Schema({
+const needtopurchaseSchema = new Schema({
     user: {
         type: String,
         required: true
@@ -10,14 +10,6 @@ const poolexpirySchema = new Schema({
         type: Number,
         default:0
     },
-    expiry: {
-        type: Number,
-        required: true
-    },
-    package_status: {
-        type: Boolean,
-        default : true
-      },
     createdAt: {
         type: Date,
         default: Date.now
@@ -31,11 +23,11 @@ const poolexpirySchema = new Schema({
     timestamp: { type: Number, required: true },
 });
 
-poolexpirySchema.index(
-    { user: 1, packageId: 1,expiry:1, txHash: 1 },
+needtopurchase.index(
+    { user: 1, packageId: 1, txHash: 1 },
     { unique: true }
   );
 
-const poolexpiry = mongoose.model('poolexpiry', poolexpirySchema);
+const needtopurchase = mongoose.model('needtopurchase', needtopurchaseSchema);
 
-module.exports = poolexpiry;
+module.exports = needtopurchase;

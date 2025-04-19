@@ -28,6 +28,7 @@ const globaldownline = require("./model/globaldownlineincome");
 const globalupline = require("./model/globaluplineincome");
 const packagebuy = require("./model/packagebuy");
 const stoppromise = require("./model/stoppromise");
+const needtopurchase = require("./model/needtopurchase");
 
 app.use(express.json());
 
@@ -186,6 +187,13 @@ async function processEvents(events) {
           block: blockNumber,
           timestamp: timestamp,
         });
+
+        const isexpiry = await poolexpiry.findOne({ user : returnValues.user, packageId : returnValues.packageId })
+        if(isexpiry){
+          await poolexpiry.updateMany(
+            { user: returnValues.user, packageId: returnValues.packageId }, 
+            { $set: { package_status: true } } 
+          );        }
       } catch (e) {
         console.log("Error (Upgrade Event) :", e.message);
       }
@@ -320,6 +328,32 @@ async function processEvents(events) {
 
       } catch (e) {
         console.log("Error (StopedPromiseReward Event) :", e.message);
+      }
+    } else if (event == "NeedToRePurchase") {
+      try {
+        
+          const iswit = await needtopurchase.create({  
+          user: returnValues.user,
+          packageId: returnValues.packageId,
+          txHash: transactionHash,
+          block: blockNumber,
+          timestamp: timestamp
+        });
+
+        if(iswit){
+          await upgrade.updateMany(
+            { user: returnValues.user, packageId: returnValues.packageId }, 
+            { $set: { package_status: true } } 
+          );  
+          
+          await newuserplace.updateMany(
+            { user: returnValues.user, packageId: returnValues.packageId }, 
+            { $set: { package_status: true } } 
+          ); 
+        }
+
+      } catch (e) {
+        console.log("Error (NeedToRePurchase Event) :", e.message);
       }
     }
   }
