@@ -192,7 +192,7 @@ async function processEvents(events) {
         if(isexpiry){
           await poolexpiry.updateMany(
             { user: returnValues.user, packageId: returnValues.packageId }, 
-            { $set: { package_status: true } } 
+            { $set: { package_status: false } } 
           );        }
       } catch (e) {
         console.log("Error (Upgrade Event) :", e.message);
@@ -343,12 +343,12 @@ async function processEvents(events) {
         if(iswit){
           await upgrade.updateMany(
             { user: returnValues.user, packageId: returnValues.packageId }, 
-            { $set: { package_status: true } } 
+            { $set: { package_status: false } } 
           );  
           
           await newuserplace.updateMany(
             { user: returnValues.user, packageId: returnValues.packageId }, 
-            { $set: { package_status: true } } 
+            { $set: { package_status: false } } 
           ); 
         }
 
