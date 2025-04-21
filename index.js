@@ -347,7 +347,7 @@ async function processEvents(events) {
           );  
           
           await newuserplace.updateMany(
-            { user: returnValues.user, packageId: returnValues.packageId }, 
+            { referrer: returnValues.user, packageId: returnValues.packageId }, 
             { $set: { package_status: false } } 
           ); 
         }
