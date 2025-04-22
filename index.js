@@ -189,7 +189,7 @@ async function processEvents(events) {
           timestamp: timestamp,
         });
 
-        const isexpiry = await poolexpiry.findOne({ user : returnValues.user, packageId : returnValues.packageId })
+        const isexpiry = await poolexpiry.findOne({ user : returnValues.user, packageId : returnValues.packageId, package_status : true })
         if(isexpiry){
           await poolexpiry.updateMany(
             { user: returnValues.user, packageId: returnValues.packageId }, 
