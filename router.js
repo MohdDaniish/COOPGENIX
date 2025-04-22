@@ -4043,9 +4043,9 @@ router.get('/uwn', async (req, res) => {
       currentcycle = matrixreentry?.cycle ?? 0;
     }
     
-    const matrixstruct = await newuserplace.find({ referrer: user, packageId: packageId, cycle: currentcycle });
+    const matrixstruct = await newuserplace.find({ referrer: user, packageId: packageId, cycle: currentcycle, package_status : true });
 
-    const expiryRecord = await poolexpiry.findOne({ user: user, packageId : packageId });
+    const expiryRecord = await poolexpiry.findOne({ user: user, packageId : packageId, package_status : true });
     
     const mergedRecords = [];
     

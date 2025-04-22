@@ -29,6 +29,7 @@ const globalupline = require("./model/globaluplineincome");
 const packagebuy = require("./model/packagebuy");
 const stoppromise = require("./model/stoppromise");
 const needtopurchase = require("./model/needtopurchase");
+const updateExpiredPackages = require("./utility/cronBlockReset")
 
 app.use(express.json());
 
@@ -1706,6 +1707,10 @@ listEvent();
 
 //setInterval(updateWithdrawDates, 30000);
 //setTeamBusiness();
+
+cron.schedule("* * * * *", async () => {
+  await updateExpiredPackages();
+});
 
 const server = app.listen(8080, () => {
   console.log("Server running!");
