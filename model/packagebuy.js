@@ -18,6 +18,10 @@ const packagebuySchema = new Schema({
         type: Number,
         default : 0
     },
+    package_status: {
+        type: Boolean,
+        default : true
+      },
     createdAt: {
         type: Date,
         default: Date.now
