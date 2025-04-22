@@ -5,7 +5,8 @@ const PackageBuy = require("../model/packagebuy"); // replace with actual path
 
 async function updateExpiredPackages() {
     try {
-      const now = new Date();
+      //const now = new Date();
+      const now = Math.floor(Date.now() / 1000);
   
       // Step 1: Find expired records in poolexpiry
       const expiredPackages = await PoolExpiry.find({
