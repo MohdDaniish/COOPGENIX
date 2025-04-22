@@ -5463,9 +5463,9 @@ router.get("/totaldata", async (req, res) => {
 
 router.get("/getpackagestatus", async (req, res) => {
   try{
-    const { address, packageId } = req.query;
+    const { user, packageId } = req.query;
     
-    const chekpack = await packagebuy.findOne({ user : address, packageId : packageId, package_status : true })
+    const chekpack = await packagebuy.findOne({ user : user, packageId : packageId, package_status : true })
 
     if(chekpack){
       res.status(200).json({ isactive : true });
@@ -5473,7 +5473,7 @@ router.get("/getpackagestatus", async (req, res) => {
       res.status(200).json({ isactive : false });
     }
 
-  } catch {err}{
+  } catch (err){
     console.log("err ",err)
   }
 })
