@@ -5461,4 +5461,21 @@ router.get("/totaldata", async (req, res) => {
   }
 });
 
+router.get("/getpackagestatus", async (req, res) => {
+  try{
+    const { address, packageId } = req.query;
+    
+    const chekpack = await packagebuy.findOne({ user : address, packageId : packageId, package_status : true })
+
+    if(chekpack){
+      res.status(200).json({ isactive : true });
+    } else {
+      res.status(200).json({ isactive : false });
+    }
+
+  } catch {err}{
+    console.log("err ",err)
+  }
+})
+
   module.exports = router;
