@@ -4591,6 +4591,8 @@ router.get('/user-info', async (req, res) => {
           const userList = await getSurroundingUsersWithAmounts(userDetails[0].uId, userId);
           //console.log(userList);
 
+         const todayinc = await  todayincome(userId)
+
       res.status(200).send({
           userDetails: userDetails[0],
           directteam : directMembers,
@@ -4601,7 +4603,7 @@ router.get('/user-info', async (req, res) => {
           spot_wallet : spot_wallet/1e18,
           reward_goal: rewardGoal > 0 ? (rewardGoal * 0.57) / 1e18 : 0,
           direct_volume : rewardGoal > 0 ? rewardGoal / 1e18 : 0,
-          // todayBonus : todayinc/1e18 + sponsor_income,
+          todayBonus : todayinc/1e18,
           sponsor_income : sponsor_income,
           global_upline_downline : userList
       });
@@ -5037,37 +5039,7 @@ router.get('/directmember', async (req, res) => {
   }
 });
 
-async function todayincome (user) {
-  try {
-   
-    const today = moment.tz('Asia/Kolkata');
-    const modifiedDate = today.clone().subtract(1, 'day').set({ hour: 18, minute: 30, second: 0, millisecond: 0 });
-    
-    const startDate = modifiedDate.toDate(); // Convert to Date object for MongoDB comparison
-    
-    const result = await UserIncome.aggregate([
-      {
-        $match: { 
-          receiver: user, // Match the specific receiver
-          createdAt: { $gte: startDate } // Ensure createdAt is greater than or equal to startDate
-        } 
-      },
-      {
-        $group: {
-          _id: null,
-          totalIncome: { $sum: "$amount" } // Sum the income field
-        }
-      }
-    ]);
-    
-    const totalIncome = result.length > 0 ? result[0].totalIncome : 0;
-    return totalIncome;
-     
 
-  } catch (error) {
-    console.error("Error getting staking plans:", error);
-  }
-};
 
 router.get('/recentincome', async (req, res) => {
   try {
@@ -5477,5 +5449,40 @@ router.get("/getpackagestatus", async (req, res) => {
     console.log("err ",err)
   }
 })
+
+async function todayincome (user) {
+  try {
+   
+    const today = moment.tz('Asia/Kolkata').startOf('day');
+    //console.log("today date ", today.toDate())
+    //const modifiedDate = today.clone().subtract(1, 'day').set({ hour: 18, minute: 30, second: 0, millisecond: 0 });
+    
+    const startDate =  today.toDate(); // Convert to Date object for MongoDB comparison
+
+    //console.log("startDate ",startDate)
+    
+    const result = await UserIncome.aggregate([
+      {
+        $match: { 
+          receiver: user, // Match the specific receiver
+          createdAt: { $gte: startDate } // Ensure createdAt is greater than or equal to startDate
+        } 
+      },
+      {
+        $group: {
+          _id: null,
+          totalIncome: { $sum: "$amount" } // Sum the income field
+        }
+      }
+    ]);
+    
+    const totalIncome = result.length > 0 ? result[0].totalIncome : 0;
+    return totalIncome;
+     
+
+  } catch (error) {
+    console.error("Error getting staking plans:", error);
+  }
+};
 
   module.exports = router;
