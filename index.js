@@ -114,10 +114,11 @@ async function processEvents(events) {
           }
           //console.log(returnValues, "returnvalue", event);
           let userId = "";
-          const randomNumber = Math.floor(Math.random() * 100000);
-          const fiveDigitNumber = randomNumber.toString().padStart(10, "0");
+          // const randomNumber = Math.floor(Math.random() * 100000);
+          // const fiveDigitNumber = randomNumber.toString().padStart(5, "0");
           //userId = "COOPG" + fiveDigitNumber;
-          userId = fiveDigitNumber;
+          const randomTenDigitNumber = Math.floor(1000000000 + Math.random() * 9000000000);
+          userId = randomTenDigitNumber;
           try {
             let isCreated = await registration.create({
               userId: userId,
