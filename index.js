@@ -206,6 +206,7 @@ async function processEvents(events) {
           sender: returnValues.sender,
           receiver: returnValues.receiver,
           amount: returnValues.amount,
+          level: returnValues.level,
           txHash: transactionHash,
           block: blockNumber,
           timestamp: timestamp,
