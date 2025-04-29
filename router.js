@@ -4625,7 +4625,7 @@ router.get('/user-info', async (req, res) => {
           direct_volume : rewardGoal > 0 ? rewardGoal / 1e18 : 0,
           todayBonus : todayinc/1e18,
           sponsor_income : sponsor_income,
-          self_team_income : self_team_income,
+          self_team_income : self_team_income.toFixed(2),
           global_upline_downline : userList
       });
   } catch (error) {
