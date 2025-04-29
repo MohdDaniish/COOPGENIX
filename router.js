@@ -4475,7 +4475,7 @@ router.get('/user-info', async (req, res) => {
 
        const sponsrew = await SponsorIncome.aggregate([
         {
-          $match: { receiver: userId } // Match the specific receiver
+          $match: { receiver: userId, level : 1 } // Match the specific receiver
         },
         {
           $group: {
@@ -4487,6 +4487,26 @@ router.get('/user-info', async (req, res) => {
 
       let sponsor_income = sponsrew.length > 0 ? sponsrew[0].totalIncome : 0;
       sponsor_income = sponsor_income/1e18;
+
+      // self team bonus from level 2 to 10
+
+      const selfsponsrew = await SponsorIncome.aggregate([
+        {
+          $match: { 
+            receiver: userId,
+            level: { $gt: 1, $lte: 10 } // level > 1 and level <= 10
+          }
+        },
+        {
+          $group: {
+            _id: null,
+            totalIncome: { $sum: "$amount" }
+          }
+        }
+      ]);
+
+      let self_team_income = selfsponsrew.length > 0 ? selfsponsrew[0].totalIncome : 0;
+      self_team_income = selfsponsrew/1e18;
 
       // promise reward cal
       const promise_rew = await packagebuy.aggregate([

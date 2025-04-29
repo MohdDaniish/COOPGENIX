@@ -15,6 +15,10 @@ const sponsorIncomeSchema = new Schema({
     type: Number,
     required: true
   },
+  level: {
+    type: Number,
+    required: true
+  },
   txHash: { type: String, required: true, },
   block: { type: Number, required: true },
   timestamp: { type: Number, required: true },
