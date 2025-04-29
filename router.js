@@ -4506,7 +4506,7 @@ router.get('/user-info', async (req, res) => {
       ]);
 
       let self_team_income = selfsponsrew.length > 0 ? selfsponsrew[0].totalIncome : 0;
-      self_team_income = selfsponsrew/1e18;
+      self_team_income = self_team_income/1e18;
 
       // promise reward cal
       const promise_rew = await packagebuy.aggregate([
