@@ -485,6 +485,7 @@ const globalupline = require("./model/globaluplineincome");
 const globaldownline = require("./model/globaldownlineincome");
 const AdminCred = require("./model/AdminCred");
 const poolexpiry = require("./model/poolexpiry");
+const weeklyfund = require("./model/weeklyfund");
 router.get("/tvl", async (req, res) => {
   try {
     const plan = req.query.plan;
@@ -4408,6 +4409,7 @@ router.get('/user-info', async (req, res) => {
                   ranknumber : 1,
                   invest_amount : 1,
                   directCount : 1,
+                  unity_income : 1,
                   referrerUserId: { $arrayElemAt: ['$referrerDetails.user', 0] }
               }
           }
@@ -4613,6 +4615,44 @@ router.get('/user-info', async (req, res) => {
 
          const todayinc = await  todayincome(userId)
 
+         // weekly fund total
+         
+         const dateto = new Date(); // current time
+
+         // Get the past Friday at 5:00 AM
+         const now = new Date();
+         const dayOfWeek = now.getDay(); // Sunday is 0, Friday is 5
+         const daysSinceFriday = (dayOfWeek >= 5) ? dayOfWeek - 5 : 7 - (5 - dayOfWeek);
+         
+         const lastFriday = new Date(now);
+         lastFriday.setDate(now.getDate() - daysSinceFriday);
+         lastFriday.setHours(5, 0, 0, 0); // Set time to 5:00 AM
+         
+         const datefrom = lastFriday;
+         
+         const weeklyfundData = await weeklyfund.aggregate([
+           {
+             $match: {
+               createdAt: { $gt: datefrom, $lte: dateto }
+             }
+           },
+           {
+             $group: {
+               _id: null,
+               totalAmount: { $sum: "$amount" }
+             }
+           }
+         ]);
+         
+         let weeklyfundd = weeklyfundData[0]?.totalAmount / 1e18 || 0;
+
+        // directs this prev week
+
+        const direct_member_week = await registration.countDocuments({
+                referrer: userId,
+                createdAt: { $gt: datefrom, $lte: dateto }
+              });
+
       res.status(200).send({
           userDetails: userDetails[0],
           directteam : directMembers,
@@ -4626,6 +4666,8 @@ router.get('/user-info', async (req, res) => {
           todayBonus : todayinc/1e18,
           sponsor_income : sponsor_income,
           self_team_income : self_team_income.toFixed(2),
+          weeklyfund : weeklyfundd,
+          week_directs : direct_member_week,
           global_upline_downline : userList
       });
   } catch (error) {

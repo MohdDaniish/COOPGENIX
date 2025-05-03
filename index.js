@@ -31,6 +31,7 @@ const stoppromise = require("./model/stoppromise");
 const needtopurchase = require("./model/needtopurchase");
 const updateExpiredPackages = require("./utility/cronBlockReset");
 const weeklyfund = require("./model/weeklyfund");
+const globalreward = require("./model/globalreward");
 
 app.use(express.json());
 
@@ -1656,6 +1657,85 @@ async function calculateseventythirty(walletAddress) {
   }
 }
 
+async function weeklyglobal() {
+  try {
+    // Step 1: Get all distinct users from registration
+    const allUsers = await registration.distinct("user");
+
+    // Step 2: Define the time range (last 7 days to now) using full datetime
+    const dateto = new Date(); // current time
+    const datefrom = new Date();
+    datefrom.setDate(dateto.getDate() - 7); // exactly 7 days ago
+
+
+    // Step 3: Calculate the total weekly fund in that exact time window
+    const weeklyfundData = await weeklyfund.aggregate([
+      {
+        $match: {
+          createdAt: { $gt: datefrom, $lte: dateto }
+        }
+      },
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: "$amount" }
+        }
+      }
+    ]);
+
+    const totalWeeklyFund = weeklyfundData[0]?.totalAmount/1e18 || 0;
+
+    // Step 4: Collect qualified users and their number of weekly directs
+    const qualifiedUsers = [];
+
+    for (const user of allUsers) {
+      const direct_member = await registration.countDocuments({
+        referrer: user,
+        createdAt: { $gt: datefrom, $lte: dateto }
+      });
+
+      // Only include if at least 1 direct was added
+      if (direct_member > 0) {
+        qualifiedUsers.push({ user, direct_member });
+      }
+    }
+
+    // Step 5: Calculate total directs from all qualified users
+    const totalDirects = qualifiedUsers.reduce((sum, obj) => sum + obj.direct_member, 0);
+
+    // Step 6: Distribute fund proportionally
+    for (const qUser of qualifiedUsers) {
+      const shareRatio = qUser.direct_member / totalDirects;
+      const income = totalWeeklyFund * shareRatio;
+
+      const seeRew = await globalreward.findOne({ user: qUser.user, lifetimerankno: 1 });
+      if (!seeRew) {
+        await globalreward.create({
+          user: qUser.user,
+          amount: income,
+          directs: qUser.direct_member,
+          shareratio : shareRatio*100,
+          weeklyfund: totalWeeklyFund,
+          polAmt: 0,
+          datefrom,
+          dateto
+        });
+
+        await registration.updateOne(
+          { user: qUser.user },
+          { $inc: { unity_income: income, allunity_income: income } }
+        );
+      }
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error in API:", error);
+    throw new Error("Internal Server Error");
+  }
+}
+
+
 // cron.schedule('* * * * *', async () => {
 //   updaterank();
 //   // await updateStakeTeamBusiness();
@@ -1713,16 +1793,16 @@ listEvent();
 //   }
 // );
 
-// cron.schedule(
-//   "0 0 * * *", // Run at 1:00 AM IST every day
-//   () => {
-//     calculatePoolReward();
-//   },
-//   {
-//     scheduled: true,
-//     timezone: "Asia/Kolkata", // Set the timezone to Asia/Kolkata for IST
-//   }
-// );
+cron.schedule(
+  "30 10 * * 5", // At 10:30 AM every Friday
+  () => {
+    weeklyglobal();
+  },
+  {
+    scheduled: true,
+    timezone: "Asia/Kolkata", // Set the timezone to IST
+  }
+);
 
 //setInterval(updateWithdrawDates, 30000);
 //setTeamBusiness();

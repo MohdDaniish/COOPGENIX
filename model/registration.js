@@ -12,6 +12,8 @@ const registration = new mongoose.Schema(
     uId: { type: Number, default: 0},
     rId: { type: Number, default: 0},
     rank: { type: Number, default: 0 },
+    unity_income : { type : Number, default: 0},
+    allunity_income : { type : Number, default: 0},
     directCount: { type: Number, default: 0 },
      invest_amount: { type: Number,default : 0 },
      rank: { type: String, default : null },
