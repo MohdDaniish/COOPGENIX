@@ -631,7 +631,7 @@ async function listEvent() {
 }
 }
 
-const rpcUrls = [
+let rpcUrls = [
   'https://polygon-rpc.com',
   'https://rpc-mainnet.matic.network',
   'https://matic-mainnet.chainstacklabs.com',
