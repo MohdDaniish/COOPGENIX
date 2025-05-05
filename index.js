@@ -635,7 +635,6 @@ const rpcUrls = [
   'https://polygon-rpc.com',
   'https://rpc-mainnet.matic.network',
   'https://matic-mainnet.chainstacklabs.com',
-  'https://polygon-mainnet.g.alchemy.com/v2/<YOUR_ALCHEMY_KEY>',
   'https://rpc.ankr.com/polygon',
   process.env.RPC_URL, // fallback to env variable
 ];
