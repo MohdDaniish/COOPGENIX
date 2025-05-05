@@ -632,10 +632,11 @@ async function listEvent() {
 }
 
 const rpcUrls = [
-  'https://opbnb-testnet-rpc.bnbchain.org',
-  'https://opbnb-testnet.nodereal.io/v1/64a9df0874fb4a93b9d0a3849de012d3',
-  'https://opbnb-testnet-rpc.publicnode.com',
-  'https://opbnb-testnet.nodereal.io/v1/e9a36765eb8a40b9bd12e680a1fd2bc5',
+  'https://polygon-rpc.com',
+  'https://rpc-mainnet.matic.network',
+  'https://matic-mainnet.chainstacklabs.com',
+  'https://polygon-mainnet.g.alchemy.com/v2/<YOUR_ALCHEMY_KEY>',
+  'https://rpc.ankr.com/polygon'
   process.env.RPC_URL, // fallback to env variable
 ];
 
