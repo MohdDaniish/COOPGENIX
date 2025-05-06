@@ -486,6 +486,8 @@ const globaldownline = require("./model/globaldownlineincome");
 const AdminCred = require("./model/AdminCred");
 const poolexpiry = require("./model/poolexpiry");
 const weeklyfund = require("./model/weeklyfund");
+const claimpromise = require("./model/claimpromisereward");
+const globalreward = require("./model/globalreward");
 router.get("/tvl", async (req, res) => {
   try {
     const plan = req.query.plan;
@@ -5547,5 +5549,65 @@ async function todayincome (user) {
     console.error("Error getting staking plans:", error);
   }
 };
+
+const modelMap = {
+  global_upline: globalupline,
+  global_downline: globaldownline,
+  block_reward: UserIncome,
+  direct_referral: SponsorIncome,
+  self_team_bonus: SponsorIncome,
+  unity_bonus: globalreward,
+  promise_reward: claimpromise,
+  package_report: packagebuy
+};
+
+router.get("/getAllreport", async (req, res) => {
+  try {
+    const { address, page = 1, limit = 10, type } = req.query;
+
+    if (!type || !modelMap[type]) {
+      return res.status(400).json({ status: 400, message: "Invalid or missing income type." });
+    }
+    
+    if(type === "unity_leaderboard"){
+    const Model = modelMap[type];
+
+    let query = "";
+   
+    if(type === "direct_referral"){
+    query = address ? { receiver: address, level : 1 } : {};
+    } else if(type === "self_team_bonus"){
+    query = address ? { receiver: address, level : { $gt: 1, $lte: 10 } } : {};
+    } else if(type === "global_upline" || type === "global_downline" || type === "block_reward"){
+    query = address ? { receiver: address } : {};
+    } else {
+    query = address ? { user: address } : {};
+    }
+
+    const data = await Model.find(query)
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(Number(limit));
+
+    const total = await Model.countDocuments(query);
+
+    return res.status(200).json({
+      status: 200,
+      message: "Data fetched successfully",
+      data,
+      pagination: {
+        total,
+        page: Number(page),
+        totalPages: Math.ceil(total / limit),
+      },
+    });
+  } else {
+    
+  }
+  } catch (err) {
+    console.error("Error fetching income list:", err);
+    return res.status(500).json({ status: 500, message: "Internal server error" });
+  }
+});
 
   module.exports = router;
