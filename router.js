@@ -4628,7 +4628,7 @@ router.get('/user-info', async (req, res) => {
          
          const lastFriday = new Date(now);
          lastFriday.setDate(now.getDate() - daysSinceFriday);
-         lastFriday.setHours(5, 0, 0, 0); // Set time to 5:00 AM
+         lastFriday.setHours(10, 30, 0, 0); // Set time to 10:30 AM
          
          const datefrom = lastFriday;
          
@@ -5558,18 +5558,38 @@ const modelMap = {
   self_team_bonus: SponsorIncome,
   unity_bonus: globalreward,
   promise_reward: claimpromise,
-  package_report: packagebuy
+  package_report: packagebuy,
+  unity_leaderboard : globalreward
 };
 
 router.get("/getAllreport", async (req, res) => {
   try {
-    const { address, page = 1, limit = 10, type } = req.query;
+    let { address, page = 1, limit = 10, type } = req.query;
+    if(type == "Global Upline"){
+      type = "global_upline"
+    } else if(type == "Global Downline"){
+      type = "global_downline"
+    } else if(type == "Block Reward"){
+      type = "block_reward"
+    } else if(type == "Direct Referral"){
+      type = "direct_referral"
+    } else if(type == "Self Team Bonus"){
+      type = "self_team_bonus"
+    } else if(type == "Unity Bonus"){
+      type = "unity_bonus"
+    }  else if(type == "Promise Reward"){
+      type = "promise_reward"
+    } else if(type == "Package Report"){
+      type = "package_report"
+    } else if(type == "Unity Leaderboard"){
+      type = "unity_leaderboard"
+    } 
 
     if (!type || !modelMap[type]) {
       return res.status(400).json({ status: 400, message: "Invalid or missing income type." });
     }
     
-    if(type === "unity_leaderboard"){
+    if(type != "unity_leaderboard"){
     const Model = modelMap[type];
 
     let query = "";
@@ -5583,7 +5603,7 @@ router.get("/getAllreport", async (req, res) => {
     } else {
     query = address ? { user: address } : {};
     }
-
+   
     const data = await Model.find(query)
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
@@ -5602,12 +5622,85 @@ router.get("/getAllreport", async (req, res) => {
       },
     });
   } else {
+    const dateto = new Date();
+
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // Sunday is 0, Friday is 5
+    const daysSinceFriday = (dayOfWeek >= 5) ? dayOfWeek - 5 : 7 - (5 - dayOfWeek);
     
+    const lastFriday = new Date(now);
+    lastFriday.setDate(now.getDate() - daysSinceFriday);
+    lastFriday.setHours(10, 30, 0, 0); // Set time to 5:00 AM
+    const datefrom = lastFriday;
+    const data = await getTopReferrersByWeek(datefrom, dateto);
+
+    return res.status(200).json({
+      status: 200,
+      message: "Data fetched successfully",
+      data,
+      pagination: {
+        total:0,
+        page: Number(0),
+        totalPages: 0,
+      },
+    });
   }
   } catch (err) {
     console.error("Error fetching income list:", err);
     return res.status(500).json({ status: 500, message: "Internal server error" });
   }
 });
+
+const getTopReferrersByWeek = async (datefrom, dateto) => {
+  try {
+
+    const fromDate = new Date(datefrom);
+    const toDate = new Date(dateto);
+
+    const users = await registration.aggregate([
+      // Match users created within the given time range
+      {
+        $match: {
+          createdAt: { $gt: fromDate, $lte: toDate },
+          referrerId: { $exists: true, $ne: null }
+        }
+      },
+      // Group by referrer to count how many referrals each made
+      {
+        $group: {
+          _id: "$referrerId",
+          directCount: { $sum: 1 }
+        }
+      },
+      // Join back to registration collection to get user details
+      {
+        $lookup: {
+          from: "registrations",
+          localField: "_id",
+          foreignField: "_userId", // assuming _userId is the unique field used to identify users
+          as: "user"
+        }
+      },
+      { $unwind: "$user" },
+      // Project only needed fields
+      {
+        $project: {
+          _id: 0,
+          userId: "$user._userId",
+          name: "$user.name",
+          referralId: "$user.referralId",
+          directCount: 1
+        }
+      },
+      // Sort by number of directs (highest first)
+      { $sort: { directCount: -1 } }
+    ]);
+
+    return users ;
+  } catch (error) {
+    console.error("Error getting top referrers:", error);
+   
+  }
+};
 
   module.exports = router;

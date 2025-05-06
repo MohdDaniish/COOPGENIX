@@ -1817,7 +1817,7 @@ async function weeklyglobal() {
 //    //console.log('setting last Withdrawal');
 //  });
 
-listEvent();
+//listEvent();
 
 //  cron.schedule('*/10 * * * *', async () => {
 //   roiwallet();
@@ -1857,7 +1857,7 @@ listEvent();
 cron.schedule(
   "30 10 * * 5", // At 10:30 AM every Friday
   () => {
-    weeklyglobal();
+   // weeklyglobal();
   },
   {
     scheduled: true,
