@@ -35,6 +35,7 @@ const globalreward = require("./model/globalreward");
 const supportwallet = require("./model/supportwallet");
 const growthwallet = require("./model/growthwallet");
 const giveawaywallet = require("./model/giveawaywallet");
+const weeklywithdraw = require("./model/weeklywithdraw");
 
 app.use(express.json());
 
@@ -381,8 +382,8 @@ async function processEvents(events) {
       }
     } else if (event == "WithdrawWeeklyReward") {
       try {
-        
-          const iswit = await withdraw.create({  
+
+          const iswit = await weeklywithdraw.create({  
           user: returnValues.user,
           weeklyReward: returnValues.weeklyReward,
           polAmt : returnValues.polAmt,
@@ -391,6 +392,13 @@ async function processEvents(events) {
           block: blockNumber,
           timestamp: timestamp,
         });
+
+        if(iswit){
+          await registration.updateOne(
+            { user: returnValues.user },
+            { $inc: { unity_income: -(weeklyReward / 1e18) } }
+          );        
+        }
 
       } catch (e) {
         console.log("Error (Withdraw Event) :", e.message);
