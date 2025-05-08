@@ -5704,23 +5704,21 @@ const getTopReferrersByWeek = async (datefrom, dateto) => {
 };
 
 router.get("/listexpirepool", async (req, res) => {
-  try{
-    const currentTime = new Date(); // current time
+  try {
+    const currentTime = Math.floor(Date.now() / 1000); // current time in seconds
 
-    const chekpack = await poolexpiry.findOne({
+    const chekpack = await poolexpiry.find({
       ischecked: 0,
-      //package_status: true,
       expiry: { $lt: currentTime } // expiry is before now
     });
 
-   
-      res.status(200).json({ chekpack });
-    
+    res.status(200).json({ chekpack });
 
-  } catch (err){
-    console.log("err ",err)
+  } catch (err) {
+    console.log("Error in /listexpirepool:", err);
+    res.status(500).json({ error: "Internal server error" });
   }
-})
+});
 
 router.post('/update-poolexpiry', async (req, res) => {
   try {
