@@ -5732,7 +5732,7 @@ router.post('/update-poolexpiry', async (req, res) => {
    // const objectIds = ids.map(id => mongoose.Types.ObjectId(id));
 
     const result = await poolexpiry.updateMany(
-      { _id: { $in: objectIds } },
+      { _id: { $in: ids } },
       { $set: { ischecked: 1 } }
     );
 
