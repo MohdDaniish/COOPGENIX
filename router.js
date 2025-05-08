@@ -5703,4 +5703,46 @@ const getTopReferrersByWeek = async (datefrom, dateto) => {
   }
 };
 
+router.get("/listexpirepool", async (req, res) => {
+  try{
+    const currentTime = new Date(); // current time
+
+    const chekpack = await poolexpiry.findOne({
+      ischecked: 0,
+      package_status: true,
+      expiry: { $lt: currentTime } // expiry is before now
+    });
+
+   
+      res.status(200).json({ chekpack });
+    
+
+  } catch (err){
+    console.log("err ",err)
+  }
+})
+
+router.post('/update-poolexpiry', async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+      return res.status(400).json({ message: "IDs array is required." });
+    }
+
+    // Convert strings to ObjectId if needed
+    const objectIds = ids.map(id => mongoose.Types.ObjectId(id));
+
+    const result = await poolexpiry.updateMany(
+      { _id: { $in: objectIds } },
+      { $set: { ischecked: 1 } }
+    );
+
+    res.status(200).json({ message: "Updated successfully", modifiedCount: result.modifiedCount });
+  } catch (err) {
+    console.error("Update error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
   module.exports = router;
