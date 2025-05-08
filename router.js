@@ -5745,4 +5745,164 @@ router.post('/update-poolexpiry', async (req, res) => {
   }
 });
 
+
+async function getPOLPrice() {
+  const feedAddress = '0xAB594600376Ec9fD91F8e885dADF0CE036862dE0';
+  const ABI = [{"inputs":[{"internalType":"address","name":"_aggregator","type":"address"},{"internalType":"address","name":"_accessController","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"int256","name":"current","type":"int256"},{"indexed":true,"internalType":"uint256","name":"roundId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"updatedAt","type":"uint256"}],"name":"AnswerUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"uint256","name":"roundId","type":"uint256"},{"indexed":true,"internalType":"address","name":"startedBy","type":"address"},{"indexed":false,"internalType":"uint256","name":"startedAt","type":"uint256"}],"name":"NewRound","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"}],"name":"OwnershipTransferRequested","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"inputs":[],"name":"acceptOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"accessController","outputs":[{"internalType":"contract AccessControllerInterface","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"aggregator","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_aggregator","type":"address"}],"name":"confirmAggregator","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"description","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"_roundId","type":"uint256"}],"name":"getAnswer","outputs":[{"internalType":"int256","name":"","type":"int256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint80","name":"_roundId","type":"uint80"}],"name":"getRoundData","outputs":[{"internalType":"uint80","name":"roundId","type":"uint80"},{"internalType":"int256","name":"answer","type":"int256"},{"internalType":"uint256","name":"startedAt","type":"uint256"},{"internalType":"uint256","name":"updatedAt","type":"uint256"},{"internalType":"uint80","name":"answeredInRound","type":"uint80"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"_roundId","type":"uint256"}],"name":"getTimestamp","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"latestAnswer","outputs":[{"internalType":"int256","name":"","type":"int256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"latestRound","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"latestRoundData","outputs":[{"internalType":"uint80","name":"roundId","type":"uint80"},{"internalType":"int256","name":"answer","type":"int256"},{"internalType":"uint256","name":"startedAt","type":"uint256"},{"internalType":"uint256","name":"updatedAt","type":"uint256"},{"internalType":"uint80","name":"answeredInRound","type":"uint80"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"latestTimestamp","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint16","name":"","type":"uint16"}],"name":"phaseAggregators","outputs":[{"internalType":"contract AggregatorV2V3Interface","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"phaseId","outputs":[{"internalType":"uint16","name":"","type":"uint16"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_aggregator","type":"address"}],"name":"proposeAggregator","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"proposedAggregator","outputs":[{"internalType":"contract AggregatorV2V3Interface","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint80","name":"_roundId","type":"uint80"}],"name":"proposedGetRoundData","outputs":[{"internalType":"uint80","name":"roundId","type":"uint80"},{"internalType":"int256","name":"answer","type":"int256"},{"internalType":"uint256","name":"startedAt","type":"uint256"},{"internalType":"uint256","name":"updatedAt","type":"uint256"},{"internalType":"uint80","name":"answeredInRound","type":"uint80"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"proposedLatestRoundData","outputs":[{"internalType":"uint80","name":"roundId","type":"uint80"},{"internalType":"int256","name":"answer","type":"int256"},{"internalType":"uint256","name":"startedAt","type":"uint256"},{"internalType":"uint256","name":"updatedAt","type":"uint256"},{"internalType":"uint80","name":"answeredInRound","type":"uint80"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"_accessController","type":"address"}],"name":"setController","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_to","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"version","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"}];
+
+  const priceFeed = new web3.eth.Contract(ABI, feedAddress);
+  const data = await priceFeed.methods.latestRoundData().call();
+  console.log("POL rate ",Number(data.answer) / 1e8)
+  return Number(data.answer) / 1e8;
+}
+
+async function convertUSDTToPOL(usdtAmount) {
+  const price = await getPOLPrice();
+  return usdtAmount / price;
+}
+
+router.post("/withdrawWeekly", async (req, res) => {
+  const { walletAddress } = req.body;
+  console.log(walletAddress, "walletAddress");
+
+  if (!walletAddress) {
+    return res.status(400).json({ success: false, message: "Invalid input" });
+  }
+
+  //const lowerCaseAddress = walletAddress.toLowerCase();
+  const lowerCaseAddress = walletAddress;
+
+  console.log("wall addr ",lowerCaseAddress)
+
+  try {
+    // Locking the walletAddress to prevent concurrent modifications
+    await lock.acquire(lowerCaseAddress, async () => {
+      const fData = await registration.findOne({ user: lowerCaseAddress });
+      console.log(fData, "fData:::");
+      if (!fData) {
+        res.status(200).json({
+          status: 200,
+          message: "User Not Found",
+        });
+      }
+
+      const amount = fData.unity_income;
+
+      if (amount < 1) {
+        res.status(200).json({
+          status: 200,
+          message: "Insufficient Unity Balance minimum is $1",
+        });
+      }
+
+      const currentTime = new Date();
+
+      // Add 3 minutes (3 * 60 * 1000 milliseconds)
+      const threeMinutesLater = new Date(currentTime.getTime() + 3 * 60 * 1000);
+
+      // Convert to timestamp in milliseconds
+      const timestampInMilliseconds = threeMinutesLater.getTime();
+      
+      // Generate hash and process withdrawal
+
+      const amountBN = web3.utils.toWei(amount.toString(), "ether");
+
+      console.log("amountBN ",amountBN)
+
+      // usdt to pol
+
+      const amountInPOL = await convertUSDTToPOL(amount);
+
+      const randomHash = await contract.methods
+        .getWithdrawHash(walletAddress, amountBN, timestampInMilliseconds)
+        .call();
+      
+      const vrsSign = await processWithdrawal(walletAddress, randomHash, amount);
+
+      return res.status(200).json({
+        success: true,
+        message: "Withdrawal Request Processed Successfully",
+        vrsSign,
+        deadline : timestampInMilliseconds,
+        amountInPOL : amountInPOL
+      });
+    });
+  } catch (error) {
+    if (error.status) {
+      return res.status(error.status).json({ success: false, message: error.message });
+    }
+    console.error("Withdrawal error:", error.stack || error);
+    return res.status(500).json({ success: false, message: "Server error. Please try again later." });
+  }
+});
+
+async function processWithdrawal(userAddress, hash, amount) {
+ 
+
+  try {
+    const lastWithdrawFund = await withdrawRoyalty.findOne({ user:userAddress}).sort({ _id: -1 });
+    console.log(lastWithdrawFund,"lastWithdrawFund::::")
+    let prevNonce = 0;
+    if (!lastWithdrawFund) {
+      prevNonce = -1;
+    } else {
+      prevNonce = lastWithdrawFund.nonce;
+    }
+
+    const currNonce = await contract.methods.nonce(userAddress).call();
+    console.log(currNonce, "currNonce:::,", prevNonce, "currNonce:::111,", Number(currNonce))
+    if (prevNonce + 1 !== Number(currNonce)) {
+      throw new Error("Invalid withdrawal request!");
+    }
+    const vrsSign = await giveVrsForWithdrawLpc(
+      userAddress,
+      hash,
+      Number(currNonce),
+      web3.utils.toWei(amount.toString(), "ether")
+    );
+
+    return vrsSign;
+  } catch (error) {
+    console.error("Error in processWithdrawal:", error);
+    throw error;
+  }
+}
+
+function giveVrsForWithdrawLpc(user, hash, nonce, amount) {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const data = {
+        user,
+        amount,
+      };
+
+      const account = web3.eth.accounts.privateKeyToAccount(process.env.Operator_Wallet);
+ 
+      web3.eth.accounts.wallet.add(account);
+      web3.eth.defaultAccount = account.address;
+
+      const signature = await web3.eth.sign(hash, account.address);
+
+      const vrsValue = parseSignature(signature)
+      data["signature"] = vrsValue;
+      resolve({ ...data, amount });
+
+      console.log(data, "data::::")
+    } catch (error) {
+      console.error("Error in signing the message:", error);
+      reject(error);
+    }
+  });
+}
+
+function parseSignature(signature) {
+  
+  const sigParams = signature.substr(2);
+  const v = "0x" + sigParams.substr(64 * 2, 2);
+  const r = "0x" + sigParams.substr(0, 64);
+  const s = "0x" + sigParams.substr(64, 64);
+ 
+  return { v, r, s };
+}
+
   module.exports = router;
