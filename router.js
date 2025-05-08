@@ -5709,7 +5709,7 @@ router.get("/listexpirepool", async (req, res) => {
 
     const chekpack = await poolexpiry.findOne({
       ischecked: 0,
-      package_status: true,
+      //package_status: true,
       expiry: { $lt: currentTime } // expiry is before now
     });
 
