@@ -488,6 +488,7 @@ const poolexpiry = require("./model/poolexpiry");
 const weeklyfund = require("./model/weeklyfund");
 const claimpromise = require("./model/claimpromisereward");
 const globalreward = require("./model/globalreward");
+const listexpire = require("./model/listexpire");
 router.get("/tvl", async (req, res) => {
   try {
     const plan = req.query.plan;
@@ -5707,10 +5708,9 @@ router.get("/listexpirepool", async (req, res) => {
   try {
     const currentTime = Math.floor(Date.now() / 1000); // current time in seconds
 
-    const chekpack = await poolexpiry.find({
+    const chekpack = await listexpire.find({
       ischecked: 0,
-      expiry: { $lt: currentTime } // expiry is before now
-    }).limit(5);
+    }).limit(100);
 
     res.status(200).json({ chekpack });
 
@@ -5731,7 +5731,7 @@ router.post('/update-poolexpiry', async (req, res) => {
     // Convert strings to ObjectId if needed
    // const objectIds = ids.map(id => mongoose.Types.ObjectId(id));
 
-    const result = await poolexpiry.updateMany(
+    const result = await listexpire.updateMany(
       { _id: { $in: ids } },
       { $set: { ischecked: 1 } }
     );

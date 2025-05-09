@@ -2,6 +2,7 @@ const mongoose = require("../connection");
 const PoolExpiry = require("../model/poolexpiry"); // replace with actual path
 const NewUserPlace = require("../model/newuserplace"); // replace with actual path
 const PackageBuy = require("../model/packagebuy"); // replace with actual path
+const listexpire = require("../model/listexpire");
 
 async function updateExpiredPackages() {
     try {
@@ -48,6 +49,14 @@ async function updateExpiredPackages() {
         }
       }));
       await PackageBuy.bulkWrite(bulkPackageBuyUpdates);
+
+        // Step 5: Save records into listexpire schema
+    const listExpireRecords = expiredPackages.map(pkg => ({
+      user: pkg.user,
+      packageId: pkg.packageId,
+      expiry: pkg.expiry
+    }));
+    await listexpire.insertMany(listExpireRecords);
   
       console.log(`Updated ${expiredPackages.length} expired packages.`);
     } catch (err) {
