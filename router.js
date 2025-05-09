@@ -5710,7 +5710,7 @@ router.get("/listexpirepool", async (req, res) => {
     const chekpack = await poolexpiry.find({
       ischecked: 0,
       expiry: { $lt: currentTime } // expiry is before now
-    }).limit(10);
+    }).limit(5);
 
     res.status(200).json({ chekpack });
 
